@@ -24,7 +24,7 @@ int main(void)
 	switch (pid)
 	{
 		case 0 :
-			i = 10;
+			i = 3;
 			while (i-- > 0)
 			{
 				printf("子进程正在运行!\n");
@@ -35,7 +35,7 @@ int main(void)
 			printf("子进程的globvar = %d,var = %d\n",globvar,var);	exit(0);
 		case -1 :	perror("ERROR");	break;
 		default :
-			i = 10;
+			i = 5;
 			while (i-- > 0)
 			{
 				printf("父进程正在运行!\n");
@@ -47,6 +47,6 @@ int main(void)
 			break;
 	//		exit(0);
 	}
-	while(1);
+
 	return 0;
 }
