@@ -19,8 +19,8 @@ int main(void)
 	pid_t pid;
 	int var = 1,i;
 
-//	pid = fork();
-	pid  = vfork();
+	pid = fork();
+//	pid  = vfork();
 	switch (pid)
 	{
 		case 0 :
