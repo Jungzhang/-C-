@@ -30,7 +30,7 @@ int main(void)
 				printf("子进程正在运行!\n");
 				globvar++;
 				var++;
-				sleep(10);
+				sleep(1);
 			}
 			printf("子进程的globvar = %d,var = %d\n",globvar,var);	exit(0);
 		case -1 :	perror("ERROR");	break;
@@ -41,11 +41,10 @@ int main(void)
 				printf("父进程正在运行!\n");
 				globvar++;
 				var++;
-				sleep(10);
+				sleep(1);
 			}
 			printf("父进程的globvar = %d,var = %d\n",globvar,var);
 			break;
-	//		exit(0);
 	}
 
 	return 0;
