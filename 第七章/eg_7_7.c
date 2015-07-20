@@ -31,11 +31,12 @@ int main(void)
 	//		if (execle("/bin/ls","ls","-l",NULL,environ) == -1)	//execle()函数练习,第一个参数为路径,第一个NULL之前为程序参数列表,其后的为新环境变量
 	//		if (execvp("ls",envp) == -1)				//execvp()函数练习,会在PATH中寻找第一个参数为名称的程序,第二个为被调函数的参数列表
 				perror("ERROR");
-	//		exit(0);
+			exit(0);
 		case -1:
 			perror("vfork error");	break;
 		default:
-			wait(&a);	//父进程等待子进程运行结束
+	//		waitpid(pid,&a,0);	//父进程等待子进程运行结束,第一个参数为等待的子进程ID,第二个存放错误码,第三个标识父进程的动作
+			wait(&a);	//父进程等待子进程运行结束,参数中存放子进程结束后的错误码(main函数中的返回值或者exit()函数的参数)
 			printf("父进程中!\n");
 	}
 
