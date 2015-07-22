@@ -103,14 +103,14 @@ int find_command(char *command)
 //执行程序
 void do_cmd(int argc, arglist *pHead)
 {
-	char *command[argc + 1];
-	int i = 0,how = 0,flag = 0;
+	char *command[argc + 1],*commandnext[argc + 1],*file;
+	int i = 0,how = 0,flag = 0,j = 0;
 	arglist_t *pTemp = pHead->pNext;
 
 	//将命令从链表中取出来存放在数组里边
-	while(pTemp != NULL)
+	for (i = 0; i < argc; i++)
 	{
-		command[i] = pTemp->arg;	i++;
+		command[i] = pTemp->arg;
 	}
 	command[i] = NULL;
 	
@@ -166,9 +166,51 @@ void do_cmd(int argc, arglist *pHead)
 				return ;
 			}
 			else{
-				how = IN_RED;	flag++;
+				how = PIPE;	flag++;
 			}
 		}
 	}
 
+	i = 0;
+	//如果含有输出重定向则将输出重定向文件名提出
+	if (how == OUT_RED)
+	{ 
+		while(command[i] != NULL)
+		{
+			if (strcmp(command[i],">") == 0)
+			{
+				file = command[i+1];	command[i] = NULL;
+			}
+			i++;
+		}
+	}
+	//如果含有输入重定向则将输入重定向文件名提出
+	if (how == IN_RED)
+	{
+		while(command[i] != NULL)
+		{
+			if (strcmp(command[i],"<") == 0)
+			{
+				file = command[i+1];	command[i] = NULL;
+			}
+			i++;
+		}
+	}
+	//如果含有管道符就将管道符后边的命令存入commandnext中
+	if (how == PIPE)
+	{
+		while(command[i] != NULL)
+		{
+			if (strcmp(command[i],"|") == 0)
+			{
+				command[i] = NULL;	i++;
+				while(command[i] != NULL)
+				{
+					commandnext[j] = command[i];	i++;	j++;
+				}
+				commandnext[j] = NULL;
+			}
+			i++;
+		}
+	}
 }
