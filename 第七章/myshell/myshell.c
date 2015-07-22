@@ -7,8 +7,12 @@
 				   如:支持带./a.out这种路径的程序,不支持带/home/zhanggen/a.out这种路径的程序
  * ************************************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "list.h"
 
 #define NORMAL		0	//普通命令
@@ -21,7 +25,7 @@ extern char **environ;
 //输出shell前面的标识zhanggen@myshell$:
 void print_prompt(void)
 {
-	printf("zhanggen@myshell$:");
+	printf("zhanggen@myshell$: ");
 }
 
 //从键盘获取命令,以\n结束,长度不大于256
@@ -34,10 +38,10 @@ void get_input(char *buf)
 	while(temp != '\n')
 	{
 		if (len < 256)
-			*buf[len] = temp;
+			buf[len] = temp;
 		len++;	temp = getchar();
 	}
-
+	buf[len] = '\0';
 	if (len >= 256)
 		printf("ERROR:输入命令长度太长,最大输入256个字符\n");
 
@@ -57,11 +61,12 @@ int explain_input(char *buf, arglist_t *pHead)
 			pNew = (arglist_t *)malloc(sizeof(arglist_t));
 			while ((buf[i] != ' ') && (buf[i] != '\0'))
 			{
-				pNew->arg[j] = buf[i];	pNew->pNext = NULL;	i++;	j++;
+				pNew->arg[j] = buf[i];	i++;	j++;
 			}
-			pNew->arg[j] = '\0';	add(pHead,pNew);	j = 0;	count++;
+			pNew->arg[j] = '\0';	pNew->pNext = NULL;	add(pHead,pNew);	j = 0;	count++;
 		}
-		i++;
+		else
+			i++;
 	}
 	
 	return count;
@@ -73,14 +78,14 @@ int find_command(char *command)
 	int i;
 	DIR *dir;
 	struct dirent *ptr;
-	char *path = {"./","/bin/","/usr/bin/",NULL};
+	char *path[] = {"./","/bin/","/usr/bin/",NULL};
 
 	if (strncmp("./",command,2) == 0)
 		command += 2;
 
 	for (i = 0; path[i] != NULL; i++)
 	{
-		if ((dir = opendir(path)) == NULL)
+		if ((dir = opendir(path[i])) == NULL)
 		{
 			perror("PATHERROR");
 			return 0;
@@ -101,18 +106,18 @@ int find_command(char *command)
 }
 
 //执行程序
-void do_cmd(int argc, arglist *pHead)
+void do_cmd(int argc, arglist_t *pHead)
 {
 	char *command[argc + 1],*commandnext[argc + 1],*file;
-	int i = 0,how = 0,flag = 0,j = 0;
+	int i = 0,how = 0,flag = 0,j = 0,background = 0;
 	arglist_t *pTemp = pHead->pNext;
-	int fp;
-	pid_t pid;
+	int fp,fp1;
+	pid_t pid,pid1;
 
 	//将命令从链表中取出来存放在数组里边
 	for (i = 0; i < argc; i++)
 	{
-		command[i] = pTemp->arg;
+		command[i] = pTemp->arg;	pTemp = pTemp->pNext;
 	}
 	command[i] = NULL;
 	
@@ -132,6 +137,7 @@ void do_cmd(int argc, arglist *pHead)
 				printf("Wrong Command\n");	return ;
 			}
 		}
+		i++;
 	}
 
 	//检查是否含有重定向符号
@@ -171,6 +177,7 @@ void do_cmd(int argc, arglist *pHead)
 				how = PIPE;	flag++;
 			}
 		}
+		i++;
 	}
 
 	i = 0;
@@ -187,7 +194,7 @@ void do_cmd(int argc, arglist *pHead)
 		}
 	}
 	//如果含有输入重定向则将输入重定向文件名提出
-	if (how == IN_RED)
+	else if (how == IN_RED)
 	{
 		while(command[i] != NULL)
 		{
@@ -199,7 +206,7 @@ void do_cmd(int argc, arglist *pHead)
 		}
 	}
 	//如果含有管道符就将管道符后边的命令存入commandnext中
-	if (how == PIPE)
+	else if (how == PIPE)
 	{
 		while(command[i] != NULL)
 		{
@@ -234,7 +241,7 @@ void do_cmd(int argc, arglist *pHead)
 						if (find_command(command[0]) == 0){
 							printf("命令未找到\n");	exit(-1);
 						}
-						if ((fp = open(file,O_RDWR|O_CREAT|O_TRUNC,0664)) = -1){
+						if ((fp = open(file,O_RDWR|O_CREAT|O_TRUNC,0664)) == -1){
 							perror("OpenFileError");	exit(-1);
 						}
 						if (dup2(fp,1) == -1){
@@ -248,7 +255,7 @@ void do_cmd(int argc, arglist *pHead)
 						if (find_command(command[0]) == 0){
 							printf("命令未找到\n");	exit(-1);
 						}
-						if ((fp = open(file,O_RDONLY)) = -1){
+						if ((fp = open(file,O_RDONLY)) == -1){
 							perror("OpenFileError");	exit(-1);
 						}
 						if (dup2(fp,0) == -1){
@@ -259,17 +266,12 @@ void do_cmd(int argc, arglist *pHead)
 						}
 						exit(0);
 				case 3:
-						pid_t pid1;
-						int fp1;
 						if (find_command(command[0]) == 0){
 							printf("命令未找到\n");	exit(-1);
 						}
 						if ((pid1 = vfork()) != -1){
 							if (pid1 == 0){
-								if (find_command[0] == 0){
-									printf("命令未找到\n");	exit(-1);
-								}
-								if ((fp1 = open("/tmp/myshell_temp",O_WRONLY|O_CREAT|O_TRUNG,0664)) == -1){
+								if ((fp1 = open("/tmp/myshell_temp",O_WRONLY|O_CREAT|O_TRUNC,0664)) == -1){
 									perror("TempFileError");	exit(-1);
 								}
 								if (dup2(fp1,1) == -1){
@@ -319,7 +321,20 @@ void do_cmd(int argc, arglist *pHead)
 
 int main(void)
 {
-
+	char buf[256];
+	arglist_t *pHead;
+	int count;
+	while(1)
+	{
+		print_prompt();
+		get_input(buf);
+		if (strcmp(buf,"exit") == 0 || strcmp(buf,"logout") == 0)
+			exit(0);
+		creatlist(&pHead);
+		count = explain_input(buf,pHead);
+		do_cmd(count,pHead);
+		destroy(pHead);
+	}
 
 	return 0;
 }
