@@ -24,7 +24,9 @@ int main(void)
 			printf("子进程中!\n");
 			oldpri = getpriority(PRIO_PROCESS,getpid());	//读取子进程的优先级
 			printf("进程旧优先级:%d\n",oldpri);
-			newpri = nice(2);								//改变子进程的优先级
+			if ((newpri = nice(2)) == -1)								//改变子进程的优先级
+	//		if ((newpri = setpriority(PRIO_PROCESS,getpid(),2)) == -1)	//设置成功返回0失败返回-1
+				printf("设置失败\n");
 			printf("进程新优先级:%d\n",newpri);
 			newpri = getpriority(PRIO_PROCESS,getpid());
 			printf("进程新优先级:%d\n",newpri);
