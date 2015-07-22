@@ -12,3 +12,7 @@ typedef struct arglist_node{
 	struct arglist_node *pNext;
 
 }arglist_t;
+void creatlist(arglist_t **pHead); 									
+void freelist(arglist_t *pHead);
+void destroy(arglist_t *pHead);					
+void add(arglist_t *pHead,arglist_t *pNew);
