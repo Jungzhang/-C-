@@ -259,11 +259,49 @@ void do_cmd(int argc, arglist *pHead)
 						}
 						exit(0);
 				case 3:
-						if ()
-						exit(0);
+						pid_t pid1;
+						int fp1;
+						if (find_command(command[0]) == 0){
+							printf("命令未找到\n");	exit(-1);
+						}
+						if ((pid1 = vfork()) != -1){
+							if (pid1 == 0){
+								if (find_command[0] == 0){
+									printf("命令未找到\n");	exit(-1);
+								}
+								if ((fp1 = open("/tmp/myshell_temp",O_WRONLY|O_CREAT|O_TRUNG,0664)) == -1){
+									perror("TempFileError");	exit(-1);
+								}
+								if (dup2(fp1,1) == -1){
+									perror("Dup2Error");	exit(-1);
+								}
+								if (execvp(command[0],command) == -1){
+									perror("ExecError");	exit(-1);
+								}
+								exit(0);
+							}
+							else{
+								wait(NULL);
+								if (find_command(commandnext[0]) == 0){
+									printf("命令未找到\n");	exit(-1);
+								}
+								if ((fp1 = open("/tmp/myshell_temp",O_RDONLY)) == -1){
+									perror("OpenTempFileError");	exit(-1);
+								}
+								if (dup2(fp1,0) == -1){
+									perror("OpenTempFileError");	exit(-1);
+								}
+								if (execvp(commandnext[0],commandnext) == -1){
+									perror("ExecError");	exit(-1);
+								}
+								exit(0);
+							}
+						}
+						else{
+							perror("VforkError");
+						}
 			}
 		}
-		else
 	}
 	else
 	{
@@ -277,4 +315,11 @@ void do_cmd(int argc, arglist *pHead)
 	{
 		wait(NULL);
 	}
+}
+
+int main(void)
+{
+
+
+	return 0;
 }
