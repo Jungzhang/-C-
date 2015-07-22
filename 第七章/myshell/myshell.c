@@ -67,7 +67,7 @@ int explain_input(char *buf, arglist_t *pHead)
 	return count;
 }
 
-//在./、/bin/、/usr/bin/ 文件夹下查找命令的可执行程序
+//在./、/bin/、/usr/bin/ 文件夹下查找命令的可执行程序,如果找到则返回1否则返回0
 int find_command(char *command)
 {
 	int i;
@@ -106,6 +106,8 @@ void do_cmd(int argc, arglist *pHead)
 	char *command[argc + 1],*commandnext[argc + 1],*file;
 	int i = 0,how = 0,flag = 0,j = 0;
 	arglist_t *pTemp = pHead->pNext;
+	int fp;
+	pid_t pid;
 
 	//将命令从链表中取出来存放在数组里边
 	for (i = 0; i < argc; i++)
@@ -212,5 +214,67 @@ void do_cmd(int argc, arglist *pHead)
 			}
 			i++;
 		}
+	}
+	//创建一个进程,让子进程执行传进来的程序
+	if ((pid = vfork()) != -1)
+	{
+		if (pid == 0)
+		{
+			switch(how)
+			{
+				case 0:
+						if (find_command(command[0]) == 0){
+							printf("命令未找到\n");	exit(-1);
+						}
+						if (execvp(command[0],command) == -1){
+							perror("ExecError");	exit(-1);
+						}
+						exit(0);
+				case 1:
+						if (find_command(command[0]) == 0){
+							printf("命令未找到\n");	exit(-1);
+						}
+						if ((fp = open(file,O_RDWR|O_CREAT|O_TRUNC,0664)) = -1){
+							perror("OpenFileError");	exit(-1);
+						}
+						if (dup2(fp,1) == -1){
+							perror("DupError");	exit(-1);
+						}
+						if (execvp(command[0],command) == -1){
+							perror("ExecError");	exit(-1);
+						}
+						exit(0);
+				case 2:
+						if (find_command(command[0]) == 0){
+							printf("命令未找到\n");	exit(-1);
+						}
+						if ((fp = open(file,O_RDONLY)) = -1){
+							perror("OpenFileError");	exit(-1);
+						}
+						if (dup2(fp,0) == -1){
+							perror("DupError");	exit(-1);
+						}
+						if (execvp(command[0],command) == -1){
+							perror("ExecError");	exit(-1);
+						}
+						exit(0);
+				case 3:
+						if ()
+						exit(0);
+			}
+		}
+		else
+	}
+	else
+	{
+		perror("VforkError");	return ;
+	}
+	if (background == 1)
+	{
+		printf("[进程号]%d\n",pid);	return ;
+	}
+	else
+	{
+		wait(NULL);
 	}
 }
