@@ -1,17 +1,22 @@
-/*******************************************************************************
+/***************************************************************************************************
  * Author	 : zhanggen
  * Email	 : zhanggen.jung@gmail.com
  * Last modified : 2015-07-21 14:56
  * Filename	 : myshell.c
- * Description	 : 第七章总结,实现自己的shell--myshell程序
- * *****************************************************************************/
+ * Description	 : 第七章总结,实现自己的shell--myshell程序(只支持带本文件夹路径的程序)
+				   如:支持带./a.out这种路径的程序,不支持带/home/zhanggen/a.out这种路径的程序
+ * ************************************************************************************************/
 #include <stdio.h>
-#include <list.h>
+#include <dirent.h>
+#include <string.h>
+#include "list.h"
 
-//输出shell前面的标识   myshell$
+extern char **environ;
+
+//输出shell前面的标识zhanggen@myshell$:
 void print_prompt(void)
 {
-	printf("myshell $");
+	printf("zhanggen@myshell$:");
 }
 
 //从键盘获取命令,以\n结束,长度不大于256
@@ -29,7 +34,7 @@ void get_input(char *buf)
 	}
 
 	if (len >= 256)
-		printf("输入命令长度超出256的限定额!\n");
+		printf("ERROR:输入命令长度太长,最大输入256个字符\n");
 
 }
 
@@ -47,7 +52,7 @@ int explain_input(char *buf, arglist_t *pHead)
 			pNew = (arglist_t *)malloc(sizeof(arglist_t));
 			while ((buf[i] != ' ') && (buf[i] != '\0'))
 			{
-				pNew->arg[j] = buf[i];	i++;	j++;
+				pNew->arg[j] = buf[i];	pNew->pNext = NULL;	i++;	j++;
 			}
 			pNew->arg[j] = '\0';	add(pHead,pNew);	j = 0;	count++;
 		}
@@ -57,4 +62,51 @@ int explain_input(char *buf, arglist_t *pHead)
 	return count;
 }
 
-//
+//在./、/bin/、/usr/bin/ 文件夹下查找命令的可执行程序
+int find_command(char *command)
+{
+	int i;
+	DIR *dir;
+	struct dirent *ptr;
+	char *path = {"./","/bin/","/usr/bin/",NULL};
+
+	if (strncmp("./",command,2) == 0)
+		command += 2;
+
+	for (i = 0; path[i] != NULL; i++)
+	{
+		if ((dir = opendir(path)) == NULL)
+		{
+			perror("PATHERROR");
+			return 0;
+		}
+		else
+		{
+			while((ptr = readdir(dir)) != NULL)
+			{
+				if (strcmp(command,ptr->d_name) == 0)
+				{
+					closedir(dir);	return 1;
+				}
+			}
+			closedir(dir);
+		}
+	}
+	return 0;
+}
+
+//执行程序
+int do_cmd(int argc, arglist *pHead)
+{
+	char *command[argc + 1];
+	int i = 0;
+	arglist_t *pTemp = pHead->pNext;
+
+	while(pTemp != NULL)
+	{
+		command[i] = pTemp->arg;	i++;
+	}
+	command[argc] = NULL;
+
+	
+}
