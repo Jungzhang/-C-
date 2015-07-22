@@ -10,10 +10,10 @@
 #include "list.h"
 
 //创建链表
-void creat(arglist_t *pHead) 									
+void creatlist(arglist_t **pHead) 									
 {														
-	pHead = (arglist_t *)malloc(sizeof(arglist_t));		
-	pHead->pNext = NULL;							
+	(*pHead) = (arglist_t *)malloc(sizeof(arglist_t));		
+	(*pHead)->pNext = NULL;							
 }														
 
 //释放链表
