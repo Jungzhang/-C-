@@ -11,6 +11,11 @@
 #include <string.h>
 #include "list.h"
 
+#define NORMAL		0	//普通命令
+#define OUT_RED		1	//输出重定向
+#define IN_RED		2	//输出重定向
+#define PIPE		3	//含有管道
+
 extern char **environ;
 
 //输出shell前面的标识zhanggen@myshell$:
@@ -96,17 +101,74 @@ int find_command(char *command)
 }
 
 //执行程序
-int do_cmd(int argc, arglist *pHead)
+void do_cmd(int argc, arglist *pHead)
 {
 	char *command[argc + 1];
-	int i = 0;
+	int i = 0,how = 0,flag = 0;
 	arglist_t *pTemp = pHead->pNext;
 
+	//将命令从链表中取出来存放在数组里边
 	while(pTemp != NULL)
 	{
 		command[i] = pTemp->arg;	i++;
 	}
-	command[argc] = NULL;
-
+	command[i] = NULL;
 	
+	//判断是否含有后台运行符&
+	i = 0;
+	while(command[i] != NULL)
+	{
+		if (strncmp(command[i],"&",1) == 0)
+		{
+			if (i == argc - 1)
+			{
+				background = 1;
+				command[argc - 1] = NULL;
+			}
+			else
+			{
+				printf("Wrong Command\n");	return ;
+			}
+		}
+	}
+
+	//检查是否含有重定向符号
+	i = 0;
+	while(command[i] != NULL)
+	{
+		//检查是否含有输出重定向
+		if (strcmp(command[i],">") == 0)
+		{
+			if ((i == argc - 1) || flag > 1){
+				printf("Wrong Command\n");
+				return ;
+			}
+			else{
+				how = OUT_RED;	flag++;
+			}
+		}
+		//检查是否含有输入重定向
+		else if (strcmp(command[i],"<") == 0)
+		{
+			if ((i == argc - 1) || flag > 1){
+				printf("Wrong Command\n");
+				return ;
+			}
+			else{
+				how = IN_RED;	flag++;
+			}
+		}
+		//检查是否含有管道符
+		else if (strcmp(command[i],"|") == 0)
+		{
+			if ((i == argc - 1) || flag > 1){
+				printf("Wrong Command\n");
+				return ;
+			}
+			else{
+				how = IN_RED;	flag++;
+			}
+		}
+	}
+
 }
