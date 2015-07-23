@@ -338,7 +338,6 @@ int main(void)
 		if (do_cmd(count,pHead) == 0){
 			wait(NULL);	getchar();	printf("[1]+\t已完成!\t\t%s\n",pHead->pNext->arg);
 		}
-	//	printf("哈哈\n");
 		remove("/tmp/myshell_temp");
 		destroy(pHead);
 	}
