@@ -25,7 +25,7 @@ extern char **environ;
 //输出shell前面的标识zhanggen@myshell$:
 void print_prompt(void)
 {
-	printf("zhanggen@myshell$: ");
+	printf("zhanggen@myshell$:");
 }
 
 //从键盘获取命令,以\n结束,长度不大于256
@@ -63,7 +63,7 @@ int explain_input(char *buf, arglist_t *pHead)
 			{
 				pNew->arg[j] = buf[i];	i++;	j++;
 			}
-			pNew->arg[j] = '\0';	pNew->pNext = NULL;	add(pHead,pNew);	j = 0;	count++;
+			pNew->arg[j] = '\0';	pNew->arg[j+1] = '#';	pNew->pNext = NULL;	add(pHead,pNew);	j = 0;	count++;
 		}
 		else
 			i++;
@@ -106,7 +106,7 @@ int find_command(char *command)
 }
 
 //执行程序
-void do_cmd(int argc, arglist_t *pHead)
+int do_cmd(int argc, arglist_t *pHead)
 {
 	char *command[argc + 1],*commandnext[argc + 1],*file;
 	int i = 0,how = 0,flag = 0,j = 0,background = 0;
@@ -134,7 +134,7 @@ void do_cmd(int argc, arglist_t *pHead)
 			}
 			else
 			{
-				printf("Wrong Command\n");	return ;
+				printf("Wrong Command\n");	return -1;
 			}
 		}
 		i++;
@@ -149,7 +149,7 @@ void do_cmd(int argc, arglist_t *pHead)
 		{
 			if ((i == argc - 1) || flag > 1){
 				printf("Wrong Command\n");
-				return ;
+				return -1;
 			}
 			else{
 				how = OUT_RED;	flag++;
@@ -160,7 +160,7 @@ void do_cmd(int argc, arglist_t *pHead)
 		{
 			if ((i == argc - 1) || flag > 1){
 				printf("Wrong Command\n");
-				return ;
+				return -1;
 			}
 			else{
 				how = IN_RED;	flag++;
@@ -171,7 +171,7 @@ void do_cmd(int argc, arglist_t *pHead)
 		{
 			if ((i == argc - 1) || flag > 1){
 				printf("Wrong Command\n");
-				return ;
+				return -1;
 			}
 			else{
 				how = PIPE;	flag++;
@@ -210,7 +210,7 @@ void do_cmd(int argc, arglist_t *pHead)
 	{
 		while(command[i] != NULL)
 		{
-			if (strcmp(command[i],"|") == 0)
+			if (strncmp(command[i],"|",1) == 0)
 			{
 				command[i] = NULL;	i++;
 				while(command[i] != NULL)
@@ -218,6 +218,7 @@ void do_cmd(int argc, arglist_t *pHead)
 					commandnext[j] = command[i];	i++;	j++;
 				}
 				commandnext[j] = NULL;
+				break;
 			}
 			i++;
 		}
@@ -307,32 +308,38 @@ void do_cmd(int argc, arglist_t *pHead)
 	}
 	else
 	{
-		perror("VforkError");	return ;
+		perror("VforkError");	return -1;
 	}
 	if (background == 1)
 	{
-		printf("[进程号]%d\n",pid);	return ;
+		printf("[1]%d\n",pid);	return 0;
 	}
 	else
 	{
-		wait(NULL);
+		wait(NULL);	return 1;
 	}
 }
 
 int main(void)
 {
-	char buf[256];
+	char buf[256],a;
 	arglist_t *pHead;
 	int count;
 	while(1)
 	{
-		print_prompt();
+		loop:	print_prompt();
 		get_input(buf);
+		if (strcmp(buf,"\0") == 0)
+			goto loop;
 		if (strcmp(buf,"exit") == 0 || strcmp(buf,"logout") == 0)
 			exit(0);
 		creatlist(&pHead);
 		count = explain_input(buf,pHead);
-		do_cmd(count,pHead);
+		if (do_cmd(count,pHead) == 0){
+			wait(NULL);	getchar();	printf("[1]+\t已完成!\t\t%s\n",pHead->pNext->arg);
+		}
+	//	printf("哈哈\n");
+		remove("/tmp/myshell_temp");
 		destroy(pHead);
 	}
 
