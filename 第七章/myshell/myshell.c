@@ -25,7 +25,10 @@ extern char **environ;
 //输出shell前面的标识zhanggen@myshell$:
 void print_prompt(void)
 {
-	printf("zhanggen@myshell$:");
+	char *path = NULL;
+	if ((path = getcwd(path,0)) == NULL)
+		perror("ERROR");
+	printf("zhanggen@myshell:%s$ ",path);
 }
 
 //从键盘获取命令,以\n结束,长度不大于256
@@ -327,7 +330,8 @@ int main(void)
 	int count;
 	while(1)
 	{
-		loop:	print_prompt();
+		loop:	
+		print_prompt();
 		get_input(buf);
 		if (strcmp(buf,"\0") == 0)
 			goto loop;
@@ -335,7 +339,14 @@ int main(void)
 			exit(0);
 		creatlist(&pHead);
 		count = explain_input(buf,pHead);
-		if (do_cmd(count,pHead) == 0){
+		if ((strcmp(pHead->pNext->arg,"cd") == 0))
+		{
+			if (chdir(pHead->pNext->pNext->arg) == -1)
+			{
+				printf("路径不存在\n");
+			}
+		}
+		else if (do_cmd(count,pHead) == 0){
 			wait(NULL);	getchar();	printf("[1]+\t已完成!\t\t%s\n",pHead->pNext->arg);
 		}
 		remove("/tmp/myshell_temp");
