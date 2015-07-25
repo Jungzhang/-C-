@@ -25,6 +25,13 @@ void print_prompt(void)
 {
 	char *path = NULL;
 	char *HomePath = getenv("HOME");
+	char *name = getenv("LOGNAME");
+	char a; 
+	int euid = geteuid();
+	if (euid == 0)
+		a = '#';
+	else
+		a = '$';
 	int len = strlen(HomePath);
 	if ((path = getcwd(path,0)) == NULL)
 		perror("ERROR");
@@ -33,7 +40,7 @@ void print_prompt(void)
 		path += (len -1);
 		path[0] = '~';
 	}
-	printf("zhanggen@myshell:%s$ ",path);
+	printf("%s@myshell:%s%c ",name,path,a);
 }
 
 //从键盘获取命令,以\n结束,长度不大于256
@@ -343,7 +350,8 @@ int main(void)
 {
 	char buf[256],a;
 	arglist_t *pHead;
-	int count;	
+	int count;
+	pid_t pid;
 	while(1)
 	{
 		loop:	
