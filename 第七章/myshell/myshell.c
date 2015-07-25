@@ -20,14 +20,19 @@
 #define IN_RED		2	//输出重定向
 #define PIPE		3	//含有管道
 
-extern char **environ;
-
 //输出shell前面的标识zhanggen@myshell$:
 void print_prompt(void)
 {
 	char *path = NULL;
+	char *HomePath = getenv("HOME");
+	int len = strlen(HomePath);
 	if ((path = getcwd(path,0)) == NULL)
 		perror("ERROR");
+	if (strncmp(HomePath,path,len) == 0)
+	{
+		path += (len -1);
+		path[0] = '~';
+	}
 	printf("zhanggen@myshell:%s$ ",path);
 }
 
@@ -55,6 +60,7 @@ int explain_input(char *buf, arglist_t *pHead)
 {
 	int count = 0,i = 0,j = 0;
 	arglist_t *pNew;
+	char *HomePath = getenv("HOME");
 	freelist(pHead);
 	pNew = (arglist_t *)malloc(sizeof(arglist_t));
 	while(buf[i] != '\0')
@@ -70,6 +76,16 @@ int explain_input(char *buf, arglist_t *pHead)
 		}
 		else
 			i++;
+	}
+
+	pNew = pHead->pNext;
+	while(pNew != NULL)
+	{
+		if (strcmp(pNew->arg,"~") == 0)
+		{
+			memset(pNew->arg,0,sizeof(pNew->arg));	strcpy(pNew->arg,HomePath);
+		}
+		pNew = pNew->pNext;
 	}
 	
 	return count;
@@ -327,7 +343,7 @@ int main(void)
 {
 	char buf[256],a;
 	arglist_t *pHead;
-	int count;
+	int count;	
 	while(1)
 	{
 		loop:	
