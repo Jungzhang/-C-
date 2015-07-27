@@ -20,12 +20,13 @@ void func(void)
 int main(void)
 {
 	pthread_t thid;
+	int err;
 
 	printf("主线程中,线程ID是:%lu\n",pthread_self());   //pthread_t 类型实际上等价于 (typedef unsigned long int pthread_t)
 
-	if (pthread_create(&thid,NULL,(void *)func,NULL) != 0) //参数列表:(参数指针,线程属性(NULL表默认),函数指针(执行的函数),要传给函数的参数)
+	if ((err = pthread_create(&thid,NULL,(void *)func,NULL)) != 0) //参数列表:(参数指针,线程属性(NULL表默认),函数指针(执行的函数),要传给函数的参数)
 	{
-		perror("CreatError");
+		printf("CreatError:%d",err);
 		exit(-1);
 	}
 	sleep(1);		//主线程暂停1秒,切换到新线程,否则程序运行不会打印函数func中的内容
