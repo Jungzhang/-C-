@@ -3,8 +3,7 @@
  * Email	 : zhanggen.jung@gmail.com
  * Last modified : 2015-07-21 14:56
  * Filename	 : myshell.c
- * Description	 : 第七章总结,实现自己的shell--myshell程序(只支持带本文件夹路径的程序)
-				   如:支持带./a.out这种路径的程序,不支持带/home/zhanggen/a.out这种路径的程序
+ * Description	 : 第七章总结,实现自己的shell--myshell程序(管道后门暂不支持用户指定路径的程序)
  * ************************************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +19,10 @@
 #define IN_RED		2	//输出重定向
 #define PIPE		3	//含有管道
 
-//输出shell前面的标识zhanggen@myshell$:
+int pathflag = 0;
+int pathnext = 0;
+
+//输出shell前面的标识user@myshell$:
 void print_prompt(void)
 {
 	char *path = NULL;
@@ -66,8 +68,9 @@ void get_input(char *buf)
 int explain_input(char *buf, arglist_t *pHead)
 {
 	int count = 0,i = 0,j = 0;
-	arglist_t *pNew;
+	arglist_t *pNew,*pTemp;
 	char *HomePath = getenv("HOME");
+	char temppath[256];
 	freelist(pHead);
 	pNew = (arglist_t *)malloc(sizeof(arglist_t));
 	while(buf[i] != '\0')
@@ -88,11 +91,36 @@ int explain_input(char *buf, arglist_t *pHead)
 	pNew = pHead->pNext;
 	while(pNew != NULL)
 	{
-		if (strcmp(pNew->arg,"~") == 0)
+		if (pNew->arg[0] == '~')
 		{
+			for (i = 1,j = 0; pNew->arg[i] != '\0'; i++,j++)
+				temppath[j] = pNew->arg[i];
+			temppath[j] = '\0';
 			memset(pNew->arg,0,sizeof(pNew->arg));	strcpy(pNew->arg,HomePath);
+			strcat(pNew->arg,temppath);
 		}
 		pNew = pNew->pNext;
+	}
+
+	pTemp = pHead->pNext;
+	if (pTemp != NULL)
+	{
+		for (i = 0; pTemp->arg[i] != '\0'; i++)
+		{
+			if(pTemp->arg[i] == '/')
+			{
+				j = i;	pathflag = 1;
+			}
+		}
+	}
+
+	if (pathflag == 1)
+	{
+		pNew = (arglist_t *)malloc(sizeof(arglist_t));
+		for (i = 0; pTemp->arg[j + 1] != '\0'; i++,j++)
+			pNew->arg[i] = pTemp->arg[j + 1];
+		pNew->arg[i + 1] = '\0';
+		pNew->pNext = pTemp->pNext;	pTemp->pNext = pNew;
 	}
 	
 	return count;
@@ -134,14 +162,18 @@ int find_command(char *command)
 //执行程序
 int do_cmd(int argc, arglist_t *pHead)
 {
-	char *command[argc + 1],*commandnext[argc + 1],*file;
+	char *command[argc + 1],*commandnext[argc + 1],*file,*temp;
 	int i = 0,how = 0,flag = 0,j = 0,background = 0;
 	arglist_t *pTemp = pHead->pNext;
 	int fp,fp1;
 	pid_t pid,pid1;
 
 	//将命令从链表中取出来存放在数组里边
-	for (i = 0; i < argc; i++)
+	if (pathflag == 1)
+	{
+		temp = pTemp->arg;	pTemp = pTemp->pNext;
+	}
+	for (i = 0; pTemp != NULL; i++)
 	{
 		command[i] = pTemp->arg;	pTemp = pTemp->pNext;
 	}
@@ -257,16 +289,25 @@ int do_cmd(int argc, arglist_t *pHead)
 			switch(how)
 			{
 				case 0:
-						if (find_command(command[0]) == 0){
-							printf("命令未找到\n");	exit(-1);
+						if (pathflag == 0){
+							if (find_command(command[0]) == 0){
+								printf("命令未找到\n");	exit(-1);
+							}
+							if (execvp(command[0],command) == -1){
+								perror("ExecError");	exit(-1);
+							}
 						}
-						if (execvp(command[0],command) == -1){
-							perror("ExecError");	exit(-1);
+						else{
+							if (execv(temp,command) == -1){
+								perror("ExecError");	exit(-1);
+							}
 						}
 						exit(0);
 				case 1:
-						if (find_command(command[0]) == 0){
-							printf("命令未找到\n");	exit(-1);
+						if (pathflag == 0){
+							if (find_command(command[0]) == 0){
+								printf("命令未找到\n");	exit(-1);
+							}
 						}
 						if ((fp = open(file,O_RDWR|O_CREAT|O_TRUNC,0664)) == -1){
 							perror("OpenFileError");	exit(-1);
@@ -274,13 +315,23 @@ int do_cmd(int argc, arglist_t *pHead)
 						if (dup2(fp,1) == -1){
 							perror("DupError");	exit(-1);
 						}
-						if (execvp(command[0],command) == -1){
-							perror("ExecError");	exit(-1);
+						//带路径和不带路径调用函数不一样
+						if (pathflag == 0){
+							if (execvp(command[0],command) == -1){
+								perror("ExecError");	exit(-1);
+							}
+						}
+						else{
+							if (execv(temp,command) == -1){
+								perror("ExecError");	exit(-1);
+							}
 						}
 						exit(0);
 				case 2:
-						if (find_command(command[0]) == 0){
-							printf("命令未找到\n");	exit(-1);
+						if (pathflag == 0){
+							if (find_command(command[0]) == 0){
+								printf("命令未找到\n");	exit(-1);
+							}
 						}
 						if ((fp = open(file,O_RDONLY)) == -1){
 							perror("OpenFileError");	exit(-1);
@@ -288,13 +339,23 @@ int do_cmd(int argc, arglist_t *pHead)
 						if (dup2(fp,0) == -1){
 							perror("DupError");	exit(-1);
 						}
-						if (execvp(command[0],command) == -1){
-							perror("ExecError");	exit(-1);
+						//带不带路径调用函数不同
+						if (pathflag == 0){
+							if (execvp(command[0],command) == -1){
+								perror("ExecError");	exit(-1);
+							}
+						}
+						else{
+							if (execv(temp,command) == -1){
+								perror("ExecError");	exit(-1);
+							}
 						}
 						exit(0);
 				case 3:
-						if (find_command(command[0]) == 0){
-							printf("命令未找到\n");	exit(-1);
+						if (pathflag == 0){
+							if (find_command(command[0]) == 0){
+								printf("命令未找到\n");	exit(-1);
+							}
 						}
 						if ((pid1 = vfork()) != -1){
 							if (pid1 == 0){
@@ -304,8 +365,15 @@ int do_cmd(int argc, arglist_t *pHead)
 								if (dup2(fp1,1) == -1){
 									perror("Dup2Error");	exit(-1);
 								}
-								if (execvp(command[0],command) == -1){
-									perror("ExecError");	exit(-1);
+								if (pathflag == 0){
+									if (execvp(command[0],command) == -1){
+										perror("ExecError");	exit(-1);
+									}
+								}
+								else{
+									if (execv(temp,command) == -1){
+										perror("ExecError");	exit(-1);
+									}
 								}
 								exit(0);
 							}
@@ -375,6 +443,7 @@ int main(void)
 		}
 		remove("/tmp/myshell_temp");
 		destroy(pHead);
+		pathflag = 0;
 	}
 
 	return 0;
