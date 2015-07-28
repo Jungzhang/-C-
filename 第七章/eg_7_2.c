@@ -18,7 +18,7 @@ int main(void)
 	pid = fork();
 	switch (pid)
 	{
-		case 0 :	k = 3;	meg = "处于子进程中!";	break;
+		case 0 :	k = 5;	meg = "处于子进程中!";	break;
 		case -1:	printf("进程创建失败!");			exit(-1);
 		default:	k = 3;	meg = "处于父进程中!";	break;
 	}
@@ -26,9 +26,8 @@ int main(void)
 	while (k)
 	{
 		puts(meg);
-		sleep(2);
+		sleep(1);
 		k--;
 	}
-
 	return 0;
 }

@@ -16,7 +16,7 @@ int main(void)
 {
 	pid_t pid;
 	int a;
-	char *envp[] = {"ls","-l",NULL};
+	char *envp[] = {"clear",NULL};
 	extern char **environ;
 	pid = vfork();
 
@@ -24,9 +24,9 @@ int main(void)
 	{
 		case 0:
 	//		printf("哈哈!\n");
-			if (execl("/bin/ls","ls","-l",NULL) == -1)  //execl()函数练习,第一个参数为路径,其余为程序参数
+	//		if (execl("/bin/ls","ls","-l",NULL) == -1)  //execl()函数练习,第一个参数为路径,其余为程序参数
 	//		if (execlp("ls","ls","-la",NULL))			//execlp()函数练习,会在PATH中寻找第一个参数为名称的程序,其余为被调程序的参数
-	//		if (execv("/bin/ls",envp) == -1)			//execv()函数练习,第一个参数为路径,其余为被调程序的参数
+			if (execv("/clear",envp) == -1)			//execv()函数练习,第一个参数为路径,其余为被调程序的参数
 	//		if (execve("/bin/ls",envp,environ) == -1)	//execve()函数练习,第一个参数为路径,第二个为完整参数列表,第三个为新环境变量
 	//		if (execle("/bin/ls","ls","-l",NULL,environ) == -1)	//execle()函数练习,第一个参数为路径,第一个NULL之前为程序参数列表,其后的为新环境变量
 	//		if (execvp("ls",envp) == -1)				//execvp()函数练习,会在PATH中寻找第一个参数为名称的程序,第二个为被调函数的参数列表
