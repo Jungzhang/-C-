@@ -29,7 +29,7 @@ int main(void)
 		printf("CreatError:%d",err);
 		exit(-1);
 	}
-	sleep(1);		//主线程暂停1秒,切换到新线程,否则程序运行不会打印函数func中的内容
+//	sleep(1);		//主线程暂停1秒,切换到新线程,否则程序运行不会打印函数func中的内容
 
 	return 0;
 }
