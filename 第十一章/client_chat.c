@@ -55,10 +55,10 @@ int main(int argc,char *argv[])
 	pthread_t thid1,thid2;
 	struct sockaddr_in addr;
 	struct arg arg;
-/*	if (argc != 3)
+	if (argc != 3)
 	{
 		printf("参数有误!\n");	return EXIT_FAILURE;
-	} */
+	}
 	//初始化socket
 	sock = socket(AF_INET,SOCK_STREAM,0);
 	if (sock < 0)
@@ -66,10 +66,10 @@ int main(int argc,char *argv[])
 		perror("Socket Error");	return EXIT_FAILURE;
 	}
 	//设置IP
-//	port = atoi(argv[2]);
+	port = atoi(argv[2]);
 	addr.sin_family = AF_INET;	//IPv4
 	addr.sin_port = htons(8080);
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	addr.sin_addr.s_addr = inet_addr(argv[1]);
 	memset(addr.sin_zero,0,sizeof(addr.sin_zero));
 	//连接
 	if (connect(sock,(struct sockaddr *)&addr,sizeof(struct sockaddr_in)) == -1)
