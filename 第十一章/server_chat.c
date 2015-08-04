@@ -55,10 +55,10 @@ int main(int argc,char *argv[])
 	struct sockaddr_in cli_addr,sev_addr;
 	pthread_t thid1,thid2;
 	struct arg arg;
-/*	if (argc != 2)
+	if (argc != 2)
 	{
 		printf("参数有误!\n");	return EXIT_FAILURE;
-	} */
+	} 
 	//初始化sever端socket
 	sev_fd = socket(AF_INET,SOCK_STREAM,0);
 	if (sev_fd < 0)
@@ -72,7 +72,7 @@ int main(int argc,char *argv[])
 		return EXIT_FAILURE;
 	}
 	//初始化sever端IP
-//	port = atoi(argv[1]);
+	port = atoi(argv[1]);
 	sev_addr.sin_family = AF_INET;
 	sev_addr.sin_port = htons(8080);
 	sev_addr.sin_addr.s_addr = htonl(INADDR_ANY);
