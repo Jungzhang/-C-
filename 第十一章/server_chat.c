@@ -55,6 +55,7 @@ int main(int argc,char *argv[])
 	struct sockaddr_in cli_addr,sev_addr;
 	pthread_t thid1,thid2;
 	struct arg arg;
+	pid_t pid;
 	if (argc != 2)
 	{
 		printf("参数有误!\n");	return EXIT_FAILURE;
@@ -81,27 +82,36 @@ int main(int argc,char *argv[])
 	{
 		perror("Bind Error");	return EXIT_FAILURE;
 	}
-
+	while(1)
+	{
 	//监听
-	if (listen(sev_fd,1) == -1)
-	{
-		perror("Listen Error");	return EXIT_FAILURE;
+		if (listen(sev_fd,20) == -1)
+		{
+			perror("Listen Error");	return EXIT_FAILURE;
+		}
+		//接受连接
+		sev_addr_len = sizeof(sev_addr);
+		cli_fd = accept(sev_fd,(struct sockaddr *)&sev_addr,&sev_addr_len);
+		if (cli_fd < 0)
+		{
+			perror("Accept Error");	return EXIT_FAILURE;
+		}
+		arg.thid = &thid1;
+		arg.sock = &cli_fd;
+		//接收数据
+		if ((pid = fork()) == -1)
+			perror("FORKERROR");
+		if (pid == 0)
+		{
+			pthread_create(&thid1,NULL,(void *)sendmag,&cli_fd);
+			pthread_create(&thid2,NULL,(void *)recvmag,&arg);
+			pthread_join(thid1,NULL);
+			pthread_join(thid2,NULL);
+			close(cli_fd);
+		}
+		else{
+			close(cli_fd);
+		}
 	}
-	//接受连接
-	sev_addr_len = sizeof(sev_addr);
-	cli_fd = accept(sev_fd,(struct sockaddr *)&sev_addr,&sev_addr_len);
-	if (cli_fd < 0)
-	{
-		perror("Accept Error");	return EXIT_FAILURE;
-	}
-	arg.thid = &thid1;
-	arg.sock = &cli_fd;
-	//接收数据
-	pthread_create(&thid1,NULL,(void *)sendmag,&cli_fd);
-	pthread_create(&thid2,NULL,(void *)recvmag,&arg);
-	
-	pthread_join(thid1,NULL);
-	pthread_join(thid2,NULL);
-	close(cli_fd);
 	close(sev_fd);
 }
