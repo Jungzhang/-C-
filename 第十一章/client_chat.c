@@ -17,8 +17,8 @@ void sendmag(int *sock)
 	while(1)
 	{
 		memset(mag,0,sizeof(mag));
-		scanf("%s",mag);
-		if (send(*sock,mag,sizeof(mag),0) < 0)
+		fgets(mag,sizeof(mag),stdin);
+		if (send(*sock,mag,strlen(mag),0) < 0)
 		{
 			perror("Send Error");	return;
 		}
@@ -44,7 +44,7 @@ void recvmag(struct arg *arg1)
 			pthread_cancel(*(arg1->thid));
 			break;
 		}
-		printf("%s\n",mag);
+		printf("%s",mag);
 	}
 	pthread_exit(0);
 }
@@ -55,10 +55,10 @@ int main(int argc,char *argv[])
 	pthread_t thid1,thid2;
 	struct sockaddr_in addr;
 	struct arg arg;
-	if (argc != 3)
-	{
-		printf("参数有误!\n");	return EXIT_FAILURE;
-	}
+//	if (argc != 3)
+//	{
+//		printf("参数有误!\n");	return EXIT_FAILURE;
+//	}
 	//初始化socket
 	sock = socket(AF_INET,SOCK_STREAM,0);
 	if (sock < 0)
@@ -66,12 +66,11 @@ int main(int argc,char *argv[])
 		perror("Socket Error");	return EXIT_FAILURE;
 	}
 	//设置IP
-	port = atoi(argv[2]);
+//	port = atoi(argv[2]);
 	addr.sin_family = AF_INET;	//IPv4
 	addr.sin_port = htons(8080);
-	addr.sin_addr.s_addr = inet_addr(argv[1]);
-	memset(addr.sin_zero,0,sizeof(addr.sin_zero));
-	//连接
+	addr.sin_addr.s_addr = inet_addr("45.78.13.104");
+	memset(addr.sin_zero,0,sizeof(addr.sin_zero));	//连接
 	if (connect(sock,(struct sockaddr *)&addr,sizeof(struct sockaddr_in)) == -1)
 	{
 		perror("Connect Error");	return EXIT_FAILURE;

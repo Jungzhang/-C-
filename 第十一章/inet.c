@@ -30,7 +30,7 @@ int main(void)
 	if ((new_ip = inet_ntoa(addr)) == NULL)
 		perror("inet_ntoa error");
 	else
-		printf("inet_ntoa：%s\n",new_ip);
+		printf("inet_ntoa：%s\n,len = %d\n",new_ip,strlen(new_ip));
 	//从网络字节顺序中提取出主机号
 	addr1.s_addr = inet_lnaof(addr);
 	printf("inet_lnaof：%#x\n",addr1.s_addr);

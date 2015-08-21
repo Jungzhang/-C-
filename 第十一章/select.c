@@ -18,30 +18,31 @@ int main(void)
 	struct timeval timeout;
 	int ret;
 
-	FD_ZERO(&readfds);	//开始使用一个描述符集合前将其清空
-	FD_SET(0,&readfds);
 
 	timeout.tv_sec = 10;	//秒数为10秒
 	timeout.tv_usec = 0;	//微秒数为0
 
 	while(1)
 	{
+		FD_ZERO(&readfds);	//开始使用一个描述符集合前将其清空
+		FD_SET(0,&readfds);
 		display_time("select之前:");
-		ret = select(1,&readfds,NULL,NULL,&timeout);
+		ret = select(1,&readfds,NULL,NULL,(struct timeval *)0);
 		display_time("select之后：");
 
 		switch(ret)
 		{
 			case 0:
 				printf("没有数据\n");
-				exit(0);
+		//		exit(0);
 			case -1:
 				perror("select error：");
 				exit(-1);
 			default:
-				getchar();
+		//		getchar();
 				printf("有数据\n");
 		}
+		setbuf(stdin,NULL);
 	}
 
 	return EXIT_SUCCESS;

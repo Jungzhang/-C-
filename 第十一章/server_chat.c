@@ -84,7 +84,7 @@ int main(int argc,char *argv[])
 	}
 	while(1)
 	{
-	//监听
+		//监听
 		if (listen(sev_fd,20) == -1)
 		{
 			perror("Listen Error");	return EXIT_FAILURE;

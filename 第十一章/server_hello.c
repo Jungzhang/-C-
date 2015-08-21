@@ -9,7 +9,7 @@ int main(void)
 {
 	int sev_fd,cli_fd,cli_addr_len;
 	struct sockaddr_in sev_addr,cli_addr;
-	char buf[256];
+	char buf[1048576];
 	int count;
 
 	memset(buf,0,sizeof(buf));
@@ -52,7 +52,7 @@ int main(void)
 		}
 		if (count == 0)
 			break;
-		printf("%s\n",buf);
+		printf("recv = %s\n",buf);
 		bzero(&buf,sizeof(buf));
 	}
 	close(cli_fd);
