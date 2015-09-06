@@ -38,7 +38,7 @@ int main(int argc,char *argv[])
 	//设置IP
 	addr.sin_family = AF_INET;	//IPv4
 	addr.sin_port = htons(8080);
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	addr.sin_addr.s_addr = inet_addr("192.168.1.101");
 	memset(addr.sin_zero,0,sizeof(addr.sin_zero));	//连接
 	if (connect(sock,(struct sockaddr *)&addr,sizeof(struct sockaddr_in)) == -1)
 	{
