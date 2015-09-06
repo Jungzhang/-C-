@@ -1,0 +1,34 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "Queries_Menu.h"
+#include "Schedule_UI.h"
+#include "Studio_UI.h"
+#include "Play_UI.h"
+
+void Queries_Menu(void){
+	char choice;
+	flu();
+loop:	system("clear");
+	printf("\n\t\t\t==================================================================\n\n");
+	printf("\n\t\t\t****************************查询菜单******************************\n\n");
+	printf("\n\t\t\t------------------------------------------------------------------\n\n");
+	printf("\n\t\t\t		[P]查询剧目信息\n");
+	printf("\n\t\t\t		[S]查询演出计划\n");
+	printf("\n\t\t\t		[R]返回上一级\n");
+	do{
+		printf("\n请选择:");
+		scanf("%c",&choice);
+		//flu();
+		if(choice == 'p' || choice == 'P')
+		{
+			Play_UI_MgtEntry(1);
+			goto loop;
+		}
+		if(choice == 's' || choice == 'S')
+		{	
+			Schedule_UI_ListAll();
+			goto loop;
+		}
+	}while('r'!= choice && 'R' != choice);
+}
