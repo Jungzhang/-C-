@@ -83,6 +83,7 @@ typedef struct optr{
 	}	\
 }
 
+//优先级表
 char compare(char ch, char top)
 {
 	switch(ch){
@@ -191,10 +192,7 @@ double CalculateExp(void)
 			}
 		}
 		else if (ch == '\n'){
-		//	if (num == 'y')
-		//		PushStack(number, data);
 			ch = '#';
-		//	PushStack(sign, ch);
 		}
 		else{
 			printf("输入的表达式有误!\n");
@@ -202,7 +200,11 @@ double CalculateExp(void)
 		}
 		GetStackTop(sign, &topSign);
 	}
-	GetStackTop(number, &result);	//将结果从栈中取出来
+	PopStack(number, &result);	//将结果从栈中取出来
+	if (!EmptyStack(number)){
+		printf("表达式有误!\n");
+		exit(-1);
+	}
 	
 	return result;
 }
