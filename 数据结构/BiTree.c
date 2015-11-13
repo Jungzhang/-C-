@@ -7,15 +7,7 @@
  * *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
-
-//树的数据结构
-typedef struct BiTree{
-	
-	char data;
-	struct BiTree *LChid;
-	struct BiTree *RChid;
-
-}BiTree;
+#include "BiTree.h"
 
 //树的创建
 BiTree *CreatTree(void)
@@ -36,7 +28,7 @@ BiTree *CreatTree(void)
 	return NewChid;
 }
 
-//树的先序遍历
+//树的先序遍历(递归)
 void PreOrder(BiTree *root)
 {
 	if (root == NULL)
@@ -46,7 +38,27 @@ void PreOrder(BiTree *root)
 	PreOrder(root->RChid);
 }
 
-//树的中序遍历
+//树的非递归遍历(先序)
+void Pre_Order(BiTree *root)
+{
+	STACK *s = InitStack();
+	BiTree *temp = root;
+
+	while (temp != NULL || !IsEmpty(s)) {
+		if (temp != NULL){
+			PushStack(s, temp);
+			printf("%c", temp->data);
+			temp = temp->LChid;
+		}
+        else {
+            PopStack(s, &temp);
+            temp = temp->RChid;
+        }
+	}
+	DestroyStack(s);
+}
+
+//树的中序遍历(递归)
 void InOrder(BiTree *root)
 {
 	if (root == NULL)
@@ -56,7 +68,26 @@ void InOrder(BiTree *root)
 	InOrder(root->RChid);
 }
 
-//树的后序遍历
+//树的非递归遍历(中序)
+void In_Order(BiTree *root)
+{
+	STACK *s = InitStack();
+	BiTree *temp = root;
+	while(temp != NULL || !IsEmpty(s)){
+		if (temp != NULL){
+			PushStack(s,temp);
+			temp = temp->LChid;
+		}
+		else{
+			PopStack(s, &temp);
+			printf("%c", temp->data);
+			temp = temp->RChid;
+		}
+	}
+	DestroyStack(s);
+}
+
+//树的后序遍历(递归)
 void PostOrder(BiTree *root)
 {
 	if (root == NULL)
@@ -64,6 +95,30 @@ void PostOrder(BiTree *root)
 	PostOrder(root->LChid);
 	PostOrder(root->RChid);
 	printf("%c", root->data);
+}
+
+//树的非递归遍历(后序)
+void Post_Order(BiTree *root)
+{
+	STACK *s = InitStack();
+	BiTree *temp = root, *visited;
+	while(temp != NULL || !IsEmpty(s)){
+		if (temp != NULL){
+			PushStack(s, temp);
+			temp = temp->LChid;
+		}
+		else {
+			GetTop(s, &temp);
+			if (temp->RChid == NULL || visited == temp->RChid) {
+				PopStack(s, &temp);
+				printf("%c", temp->data);
+				visited = temp;	temp = NULL;
+			}
+			else {
+				temp = temp->RChid;
+			}
+		}
+	}
 }
 
 //统计叶子节点个数,并输出叶子节点
@@ -79,15 +134,88 @@ void LeafCount(BiTree *root, int *count)
 	}
 }
 
-//求树高
-void 
+//求二叉树高
+void BiTreeDepth(BiTree *root, int h, int *depth)
+{
+	if (root != NULL){
+		if (h > *depth)
+			*depth = h;
+		BiTreeDepth(root->LChid, h + 1, depth);
+		BiTreeDepth(root->RChid, h + 1, depth);
+	}
+}
+//求树叶子结点的路径
+void PrePath(BiTree *root, char path[], int len)
+{
+	int i;
+	if (root == NULL)
+		return ;
+	if (root->LChid == NULL && root->RChid == NULL){
+		printf("%c : ", root->data);
+		for(i = 0; i < len; i++){
+			printf("%c", path[i]);
+		}
+		printf("\n");
+	}
+	path[len] = root->data;	len++;
+	PrePath(root->LChid, path, len);
+	PrePath(root->RChid, path, len);
+	len--;
+}
+
+//二元组打印树的层次
+void PrintLevel(BiTree *root, int h)
+{
+	if (root != NULL){
+		printf("(%c,%d)", root->data, h);
+		PrintLevel(root->LChid, h + 1);
+		PrintLevel(root->RChid, h + 1);
+	}
+}
+
+//求孩子兄弟表示法的叶子结点个数
+void PrintLeaf(BiTree *root, int *count)
+{
+	if (!root)
+		return;
+	if (root->LChid == NULL)
+		(*count)++;
+	PrintLeaf(root->LChid, count);
+	PrintLeaf(root->RChid, count);	
+}
+
+//求兄弟链表表示法中树的高度
+void TreeDepth(BiTree *root, int h, int *depth)
+{
+	if (root != NULL){
+		if (h > (*depth))
+			(*depth) = h;
+		TreeDepth(root->LChid, h + 1, depth);
+		TreeDepth(root->RChid, h, depth);
+	}
+}
 
 //打印二叉树
+void PrintTree(BiTree *root, int h)
+{
+	int i;
+	if (root == NULL)
+		return;
+	PrintTree(root->RChid, h + 1);
+	for (i = 0; i < h; i++){
+		printf("  ");
+	}
+	printf("%c\n", root->data);
+	PrintTree(root->LChid, h+1);
+}
 
 int main(void)
 {
 	BiTree *root;
+	char path[256];
+	int len = 0;
 	int count = 0;
+	int h = 1, depth = 0;
 	printf("请输入要创建树的先序序列:");
 	root = CreatTree();
 	PreOrder(root);
@@ -95,9 +223,20 @@ int main(void)
 	InOrder(root);
 	printf("\n");
 	PostOrder(root);
-	printf("\n");
-	LeafCount(root, &count);
+	PrintLeaf(root, &count);
 	printf("\n叶子节点个数:%d\n", count);
+	TreeDepth(root, h, &depth);
+	printf("树的高度为：%d\n", depth);
+	PrePath(root, path, len);
+	PrintLevel(root, h);
+	printf("\n非递归先序遍历:");
+	Pre_Order(root);
+	printf("\n非递归中序遍历:");
+	In_Order(root);
+	printf("\n非递归后序遍历:");
+	Post_Order(root);
+	printf("\n");
+	PrintTree(root, 1);
 	
 	return 0;
 }

@@ -8,8 +8,8 @@
 
 #include <stdio.h>
 
-//将x上的n个盘子借助y移动到z上
-void move(int n, char x, char y, char z)
+//将x上的n个盘子借助y移动到z上(递归)
+void RecursionMove(int n, char x, char y, char z)
 {
 	if (n == 1) {
 		printf("%c -> %c\n", x, z);		//如果是一个盘子,直接将盘子从X移动到Z
@@ -25,5 +25,5 @@ int main(void)
 {
 	int n;
 	scanf("%d", &n);
-	move(n, 'x', 'y', 'z');
+	RecursionMove(n, 'x', 'y', 'z');
 }
