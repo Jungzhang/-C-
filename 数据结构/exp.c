@@ -27,6 +27,8 @@ typedef struct optr{
 
 }OPTR;
 
+//因为涉及到两个栈的操作,所以将栈相关的操作用宏定义写成函数,
+//这样就具有了通用性
 //初始化栈
 #define InitStack(StackType, stack)	\
 {	\
@@ -201,7 +203,7 @@ double CalculateExp(void)
 		GetStackTop(sign, &topSign);
 	}
 	PopStack(number, &result);	//将结果从栈中取出来
-	if (!EmptyStack(number)){
+	if (!EmptyStack(number)){   //如果取出后栈不为空则表示输入的表达式不正确
 		printf("表达式有误!\n");
 		exit(-1);
 	}

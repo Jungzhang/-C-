@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "BiTree.h"
+#include <string.h>
 
 //树的创建
 BiTree *CreatTree(void)
@@ -26,6 +27,48 @@ BiTree *CreatTree(void)
 		NewChid->RChid = CreatTree();
 	}
 	return NewChid;
+}
+
+//输入树的先序序列和中序序列,创建一棵二叉树
+BiTree *PreCreat(char pre[], char in[], int pre_start, int in_start, int len)
+{
+    BiTree *root;
+    int m = 0;
+
+    if (len <= 0){
+        return NULL;
+    }
+
+    root = (BiTree *)malloc(sizeof(BiTree));
+    root->data = pre[pre_start];
+    while(in[m] != '\0'  && in[m] != pre[pre_start]){
+        m++;
+    }
+    root->LChid = PreCreat(pre, in, pre_start + 1, in_start, m - in_start);
+    root->RChid = PreCreat(pre, in, pre_start + 1 + (m - in_start), m + 1, len - (m - in_start) - 1);
+
+    return root;
+}
+
+//输入树的后序序列和中序序列，创建一棵二叉树
+BiTree *PostCreat(char post[], char in[], int post_end, int in_start, int len)
+{
+    BiTree *root;
+    int m = 0;
+
+    if (len <= 0){
+        return NULL;
+    }
+    root = (BiTree *)malloc(sizeof(BiTree));
+    root->data = post[post_end];
+    while(in[m] != '\0' && in[m] != post[post_end]){
+        m++;
+    }
+    //创建左子树
+    root->LChid = PostCreat(post, in, post_end - 1 - (len - (m - in_start) - 1), in_start, m - in_start);
+    root->RChid = PostCreat(post, in, post_end - 1, m + 1, len - (m - in_start) - 1);
+    
+    return root;
 }
 
 //树的先序遍历(递归)
@@ -212,31 +255,37 @@ void PrintTree(BiTree *root, int h)
 int main(void)
 {
 	BiTree *root;
-	char path[256];
-	int len = 0;
-	int count = 0;
-	int h = 1, depth = 0;
-	printf("请输入要创建树的先序序列:");
-	root = CreatTree();
+    char pre[256], in[256];
+    int count = 0;
+    scanf("%s", pre);
+    scanf("%s", in);
+    count = strlen(pre);
+    root = PostCreat(pre, in, count - 1, 0, count);
+//	char path[256];
+//	int len = 0;
+//	int count = 0;
+//	int h = 1, depth = 0;
+//	printf("请输入要创建树的先序序列:");
+//	root = CreatTree();
 	PreOrder(root);
 	printf("\n");
 	InOrder(root);
 	printf("\n");
 	PostOrder(root);
-	PrintLeaf(root, &count);
-	printf("\n叶子节点个数:%d\n", count);
-	TreeDepth(root, h, &depth);
-	printf("树的高度为：%d\n", depth);
-	PrePath(root, path, len);
-	PrintLevel(root, h);
-	printf("\n非递归先序遍历:");
-	Pre_Order(root);
-	printf("\n非递归中序遍历:");
-	In_Order(root);
-	printf("\n非递归后序遍历:");
-	Post_Order(root);
+//	PrintLeaf(root, &count);
+//	printf("\n叶子节点个数:%d\n", count);
+//	TreeDepth(root, h, &depth);
+//	printf("树的高度为：%d\n", depth);
+//	PrePath(root, path, len);
+//	PrintLevel(root, h);
+//	printf("\n非递归先序遍历:");
+//	Pre_Order(root);
+//	printf("\n非递归中序遍历:");
+//	In_Order(root);
+//	printf("\n非递归后序遍历:");
+//	Post_Order(root);
 	printf("\n");
-	PrintTree(root, 1);
+//	PrintTree(root, 1);
 	
 	return 0;
 }
