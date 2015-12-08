@@ -59,17 +59,17 @@ Huffman *InitTree(char data[], int weight[])
     Huffman *root;
     int i;
 
-    root = (Huffman *)malloc(sizeof(Huffman) * SIZE);
+    root = (Huffman *)malloc(sizeof(Huffman) * SIZE);  //分配存储池
 
     for (i = 0; i < N; i++){
-        root[i].data = data[i];
+        root[i].data = data[i];      //将叶子结点放入存储池的前端,并将他们的双亲和孩子结点都置为无效
         root[i].weight = weight[i];
         root[i].parent = -1;
         root[i].LChid = -1;
         root[i].RChid = -1;
     }
 
-    for (i; i < SIZE; i++){
+    for (i; i < SIZE; i++){    //将存储池中剩余的结点都初始化为未使用状态
         root[i].data = '\0';
         root[i].weight = 0;
         root[i].parent = -1; 
@@ -80,23 +80,24 @@ Huffman *InitTree(char data[], int weight[])
     return root;
 }
 
-//选取两个权值最小的结点,b中存储的是次小值下标,a中存储的是最小值下标
+//从root中选取两个权值最小的结点,b中存储的是次小值下标,a中存储的是最小值下标
 void SelectNode(Huffman *root, int *a, int *b)
 {
     int i;
 
-    for (i = 0; root[i].weight != 0 && root[i].parent != -1; i++);
-    *a = i;     *b = i;
+    for (i = 0; root[i].weight != 0 && root[i].parent != -1; i++);  //找到数组中下标从0开始的第一个未建树结点下标
+    *a = i;     *b = i;         //将该下标作为初始值
     
-    for (i = 0; root[i].weight != 0; i++){
-        if (root[i].parent == -1 && root[i].weight <= root[*a].weight){
-            *b = *a;    *a = i; 
+    //后两个if语句防止了当第一个未建树的权值是最小值时返回的a,b全为最小值情况的发生
+    for (i = 0; root[i].weight != 0; i++){  //遍历所有存储池中已使用的元素
+        if (root[i].parent == -1 && root[i].weight <= root[*a].weight){  //如果遍历到的元素权值比最小值小
+            *b = *a;    *a = i;     //将最小值作为次小值(下标),并将该值作为最小值(下标)
         }
-        else if (*a == *b && root[i].parent == -1){
+        else if (*a == *b && root[i].parent == -1){   //如果a,b值相同表明还未进行次小值比较,将此时的值暂且作为次小值
             *b = i;
-        }
-        else if (root[i].parent == -1 && root[i].weight <= root[*b].weight && *a != *b){
-            *b = i;
+        }  //如果遍历到的元素权值比次小值小,并且确定已进行次小值的比较
+        else if (root[i].parent == -1 && root[i].weight <= root[*b].weight && *a != *b){  
+            *b = i;  //将该值作为次小值
         }
     }
 }
@@ -218,7 +219,7 @@ int main(int argc, char *argv[])
 
     StrToCode(str, data, code);
 
-//    printf("WPL = %d\n", CalculateWPL(root));
+    printf("WPL = %d\n", CalculateWPL(root));
     
     return 0;
 }
