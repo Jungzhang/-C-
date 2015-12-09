@@ -29,6 +29,7 @@ typedef struct optr{
 
 //因为涉及到两个栈的操作,所以将栈相关的操作用宏定义写成函数,
 //这样就具有了通用性
+
 //初始化栈
 #define InitStack(StackType, stack)	\
 {	\
