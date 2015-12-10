@@ -7,6 +7,8 @@
  ************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <limits.h>
 #include "GraphStack.h"
 #include "GraphQueue.h"
 
@@ -72,12 +74,14 @@ void SearcPos(GRAPH *graph, char start, char end, int *posStart, int *posEnd)
 void InsertList(side *pHead, side *pNew)
 {
     side *pTemp = pHead;
+
     while(pTemp->pNext) {
         if (pTemp->pNext->pos > pNew->pos){
             break;
         }
         pTemp = pTemp->pNext;
     }
+
     pNew->pNext = pTemp->pNext;
     pTemp->pNext = pNew;
 }
@@ -109,72 +113,50 @@ void CreatGraph(GRAPH *graph)
     }
 }
 
-//取出图graph中ver(出度结点)的下一个结点
-int AdjVex(GRAPH *graph, int ver, int visit)
-{
-    side *pTemp = graph->v[ver].pFirst->pNext;
-
-    //如果访问的结点是第一个结点则返回第一个相邻的结点
-    if (ver == visit && pTemp){
-        return pTemp->pos;
-    }
-    
-    for (pTemp; pTemp != NULL && pTemp->pos != visit; pTemp = pTemp->pNext);
-    
-    if (pTemp == NULL)      //如果未找到visit结点则就不存在下一个结点,即返回-1
-        return -1;
-
-    if (pTemp->pNext != NULL)   //如果找到visit结点并且下一个结点还存在就返回下一个结点的位置
-        return pTemp->pNext->pos;
-    else    //如果visit结点的下一个结点不存在就返回-1
-        return -1;
-}
-
-
 //DFS(递归)
 void DFS_R(GRAPH *graph, int ver, int visited[])
 {
-    int visit = ver;      //要访问的结点下标
-    printf("%c", graph->v[visit].data);
-    visited[visit] = 1;
-    visit = AdjVex(graph, ver, visit);      //取出ver的下一个邻接点
-
-    while (visit != -1){
+    side *pTemp = graph->v[ver].pFirst->pNext;
+    printf("%c", graph->v[ver].data);
+    visited[ver] = 1;
+    
+    while (pTemp){
         
-        if (!visited[visit]){           //如果没有被访问过
-            DFS_R(graph, visit, visited);          //DFS该结点
+        if (!visited[pTemp->pos]){           //如果没有被访问过
+            DFS_R(graph, pTemp->pos, visited);          //DFS该结点
         }
         
-        visit = AdjVex(graph, ver, visit);    //取出ver的下一个邻接点
+        pTemp = pTemp->pNext;
     }
 }
 
 //DFS(非递归)
 void DFS(GRAPH *graph, int ver, int visited[])
 {
-    int visit = ver;
+    side *pTemp;
     STACK *stack = InitStack();
     
-    printf("%c", graph->v[visit].data);
-    visited[visit] = 1;
-    PushStack(stack, visit);
+    printf("%c", graph->v[ver].data);
+    visited[ver] = 1;
+    PushStack(stack, ver);
 
     while (!IsEmpty(stack)) {
-        visit = AdjVex(graph, ver, visit);
-        while (visit != -1) {
-            if (!visited[visit]) {
-                printf("%c", graph->v[visit].data);
-                visited[visit] = 1;
-                PushStack(stack, visit);
-                ver = visit;  //将出度结点更改为新结点
-                visit = AdjVex(graph, ver, visit);  //找到新出度结点的下一个邻接点
-            } else {
-                visit = AdjVex(graph, ver, visit);
+        pTemp = graph->v[ver].pFirst->pNext;
+        
+        while (pTemp) {
+            if (!visited[pTemp->pos]) {
+                printf("%c", graph->v[pTemp->pos].data);
+                visited[pTemp->pos] = 1;
+                PushStack(stack, pTemp->pos);
+                pTemp = graph->v[pTemp->pos].pFirst;
             }
+            pTemp = pTemp->pNext;
         }
-        PopStack(stack, &visit);
-        if (!IsEmpty(stack)){
-            GetTop(stack, &ver);
+        
+        PopStack(stack, &ver);
+        
+        if (!IsEmpty(stack)) {
+            PopStack(stack, &ver);
         }
     }
 }
@@ -213,28 +195,26 @@ void TraverseDFS(GRAPH *graph)
 //BFS
 void BFS(GRAPH *graph, int ver, int visited[])
 {
-    int visit = ver;
     Queue *q = InitQueue();
+    side *pTemp;
     
     printf("%c", graph->v[ver].data);
-    visited[visit] = 1;
-    InQueue(q, visit);
+    visited[ver] = 1;
+    InQueue(q, ver);
     
     while (!QIsEmpty(q)) {
         
         OutQueue(q, &ver);
-        visit = ver;
-        visit = AdjVex(graph, ver, visit);
+        pTemp = graph->v[ver].pFirst->pNext;
         
-        while (visit != -1) {
+        while (pTemp) {
             
-            if (!visited[visit]) {
-                printf("%c", graph->v[visit].data);
-                visited[visit] = 1;
-                InQueue(q, visit);
+            if (!visited[pTemp->pos]) {
+                printf("%c", graph->v[pTemp->pos].data);
+                visited[pTemp->pos] = 1;
+                InQueue(q, pTemp->pos);
             }
-            
-            visit = AdjVex(graph, ver, visit);
+            pTemp = pTemp->pNext;
         }
     }
 }
@@ -250,7 +230,7 @@ void TraverseBFS(GRAPH *graph)
     for (i = 0; i < graph->len; i++) {
         
         if (!visited[i]) {
-            BFS(graph, i, visited);
+            BFS(graph, 0, visited);
         }       
     }
 
@@ -271,7 +251,7 @@ void degree(GRAPH *graph, int ver, int *in_degree, int *out_degree, int *total)
     for (i = 0; i < graph->len; i++) {
         
         pTemp = graph->v[i].pFirst->pNext;
-
+        
         while (pTemp) {
             
             if (i == ver) {
@@ -288,10 +268,70 @@ void degree(GRAPH *graph, int ver, int *in_degree, int *out_degree, int *total)
     (*total) = (*out_degree) + (*in_degree);
 }
 
+//Dijkstra算法,dist是start点到其他点的距离,path是start到其他各点的最短路径
+void Dijkstra(GRAPH *graph, int start, int dist[], int **path)
+{
+    int i, j, mindist, minpos;
+    int *visited = (int *)malloc(sizeof(int) *graph->len);
+    side *pTemp;
+
+    //初始化
+    for (i = 0; i < graph->len; ++i) {
+        
+        if (i != start) {
+            dist[i] = INT_MAX;
+        } else {
+            dist[i] = 0;
+        }
+        
+        path[i][0] = -1;  //加上一个最短路径的结束标志
+        visited[i] = 0;
+    }
+
+    //算法核心
+    for (j = 0; j < graph->len; ++j) {
+        
+        mindist = INT_MAX;
+        
+        //选择最小值路径的下标和最小值
+        for (i = 0; i < graph->len; ++i) {
+            if (!visited[i] && dist[i] < mindist) {
+                minpos = i;
+                mindist = dist[i];
+            }
+        }
+        
+        visited[minpos] = 1;  //将最小值的点置为已获得最小路径
+        pTemp = graph->v[minpos].pFirst->pNext;  //选择最小值的第一个邻接点
+        
+        while (pTemp) {
+            i = pTemp->pos;  //选择最小值点的邻接点
+            //如果该点没有被加入,并且最小值加上该点的权值小于原记录的路径长度
+            if (!visited[i] && dist[i] > dist[minpos] + pTemp->weight) { 
+                //将路径长度改为新的路径长度
+                dist[i] = pTemp->weight + dist[minpos];
+                for (j = 0; path[minpos][j] != -1; ++j) {
+                    path[i][j] = path[minpos][j];   //将最小值的路径拷贝给本结点
+                }
+                path[i][j] = minpos;
+                path[i][j + 1] = -1;    //因为是以-1作为路径结束的标志,因此必须将其置为-1
+            }
+            pTemp = pTemp->pNext; //选择最小值点的下一个邻接点
+        }
+    }
+
+    free(visited);
+}
+
+//floyd求最短路径
+
+
 int main(int argc, char *argv[])
 {
-    int i, in_degree, out_degree, total;
+    int i, j, in_degree, out_degree, total;
+    int *dist, **path;
     GRAPH *graph = InitGraph();
+    
     CreatGraph(graph);
     printf("\n");
     TraverseDFS(graph);
@@ -303,6 +343,27 @@ int main(int argc, char *argv[])
     for (i = 0; i < graph->len; i++) {
         degree(graph, i, &in_degree, &out_degree, &total);
         printf("%6c%9d%8d%8d\n", graph->v[i].data, in_degree, out_degree, total);
+    }
+    
+    dist = (int *)malloc(sizeof(int) * graph->len);
+    path = (int **)malloc(sizeof(int *) * graph->len);
+
+    for (i = 0; i < graph->len; ++i) {
+        path[i] = (int *)malloc(sizeof(int) * graph->len);
+    }
+    
+    Dijkstra(graph, 1, dist, path);
+
+    for (i = 0; i < graph->len; ++i) {
+        if (dist[i] == INT_MAX) {
+            printf("%c无可到达的路径\n", graph->v[i].data);
+        } else {
+            printf("%c:\t%d\t经过的结点是：", graph->v[i].data, dist[i]);
+            for (j = 0; path[i][j] != -1; ++j) {
+                printf("%c", graph->v[path[i][j]].data);
+            }
+            printf("%c\n", graph->v[i].data);
+        }
     }
     
     return 0;
