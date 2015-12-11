@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
         path[i] = (int *)malloc(sizeof(int) * graph->len);
     }
     
-    Dijkstra(graph, 4, dist, path);
+    Dijkstra(graph, 5, dist, path);
 
     for (i = 0; i < graph->len; ++i) {
         if (dist[i] == INT_MAX) {
