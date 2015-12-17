@@ -235,7 +235,6 @@ void TraverseBFS(GRAPH *graph)
     }
 
     printf("\n");
-
 }
 
 //计算图的度
@@ -324,7 +323,10 @@ void Dijkstra(GRAPH *graph, int start, int dist[], int **path)
 }
 
 //floyd求最短路径
-
+void floyd(GRAPH *graph, int start, int *dist)
+{
+    
+}
 
 int main(int argc, char *argv[])
 {
