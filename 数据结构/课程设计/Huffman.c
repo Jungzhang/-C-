@@ -86,7 +86,7 @@ int CreatHuffmanCode(HuffmanTreeNode *HuffmanTree, char HuffmanCode[LEAFMAX][COD
             
             while (HuffmanTree[j].parent > -1) {
                 assert(!(cursor < 0));     //断言函数,保证程序的安全性(如果超过255层则表示程序出错)
-                if (j == HuffmanTree[HuffmanTree[j].parent].LChild){
+                if (j == HuffmanTree[HuffmanTree[j].parent].LChild) {
                     CodeTemp[cursor] = '0';
                 } else if (j == HuffmanTree[HuffmanTree[j].parent].RChild) {
                     CodeTemp[cursor] = '1';
