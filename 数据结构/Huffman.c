@@ -10,7 +10,7 @@
 #include <string.h>
 
 int N;          //哈夫曼树的叶子结点个数
-int SIZE;     //哈夫曼树的存储池大小
+int SIZE;       //哈夫曼树的存储池大小
 
 //判断某个字符是否在数组中
 int IsExist(char data[], char tar)
