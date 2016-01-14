@@ -88,11 +88,11 @@ void Pre_Order(BiTree *root)
 	BiTree *temp = root;
 
 	while (temp != NULL || !IsEmpty(s)) {
-		if (temp != NULL){
-			PushStack(s, temp);
-			printf("%c", temp->data);
-			temp = temp->LChid;
-		}
+	    if (temp != NULL){
+            PushStack(s, temp);
+            printf("%c", temp->data);
+            temp = temp->LChid;
+        }
         else {
             PopStack(s, &temp);
             temp = temp->RChid;

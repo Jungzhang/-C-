@@ -42,4 +42,7 @@ int GetTop(STACK *head, BiTree **data);
 //判栈空
 int IsEmpty(STACK *head);
 
+//销毁栈
+void DestroyStack(STACK *head);
+
 #endif
