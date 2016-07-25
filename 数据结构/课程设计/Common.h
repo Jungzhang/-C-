@@ -28,12 +28,12 @@ int GetWeight(int *weight, char *SourceName);
 int SelectNode(HuffmanTreeNode HuffmanTree[], int *FirstMin, int *SecondMin, int length);
 
 //程序使用说明
-inline void Instruction(char *name);
+void Instruction(char *name);
 
 //把二进制字符串转为一个char
-inline int StrToChar(char StrNum[]);
+int StrToChar(char *StrNum);
 
 //把一个char转化为二进制
-inline void CharToStr(int ch, char *StrNum);
+void CharToStr(int ch, char *StrNum);
 
 #endif

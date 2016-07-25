@@ -12,7 +12,7 @@
 #include "Common.h"
 
 //统计文件中字符出现的次数,得到频率数组weight[]
-inline int GetWeight(int *weight, char *SourceName)
+int GetWeight(int *weight, char *SourceName)
 {
     int i;
     int ch;
@@ -71,7 +71,7 @@ int SelectNode(HuffmanTreeNode *HuffmanTree, int *FristMin, int *SecondMin, int 
 }
 
 //程序使用说明
-inline void Instruction(char *name)
+void Instruction(char *name)
 {
     printf("使用方法：\n");
     printf("\t%s -功能参数 -s(source) 源文件 -t(target) 压缩后的文件名\n\n", name);
@@ -81,7 +81,7 @@ inline void Instruction(char *name)
 }
 
 //把二进制字符串转化为一个char
-inline int StrToChar(char *StrNum)
+int StrToChar(char *StrNum)
 {
     int i = 7;
     int num = 0;
@@ -95,7 +95,7 @@ inline int StrToChar(char *StrNum)
 }
 
 //把一个char转化为二进制
-inline void CharToStr(int ch, char *StrNum)
+void CharToStr(int ch, char *StrNum)
 {
     int i;
 
