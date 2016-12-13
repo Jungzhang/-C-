@@ -8,3 +8,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "sloth.h"
+
+int sloth_parse(sloth_value *root, const char *json)
+{
+    
+}
+
+sloth_type sloth_get_type(const sloth_value *v)
+{
+
+}

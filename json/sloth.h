@@ -27,7 +27,7 @@ typedef struct {
 //返回值定义
 enum {
     //正确,无错误
-    SLOTH_PARSE_OK = 0;
+    SLOTH_PARSE_OK = 0,
     //传入的json字符串只包含空白字符
     SLOTH_PARSE_EXPECT_VALUE,
     //如果传入的字符串中包含非法字符
@@ -39,7 +39,7 @@ enum {
 //传入JSON字符串
 //将其解析为JSON对象
 //存于传入的JSON对象指针为根节点的JSON树中
-int sloth_parse(sloth_type *root, const char *json);
+int sloth_parse(sloth_value *root, const char *json);
 
 //获取结果
 sloth_type sloth_get_type(const sloth_value *v);
