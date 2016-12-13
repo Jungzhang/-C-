@@ -34,7 +34,7 @@ static void test_parse_null()
     sloth_value v;
     v.type = SLOTH_TRUE;
     EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "null"));
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_get_type(&v));
+    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
 }
 
 //测试为零个或多个空格
@@ -42,11 +42,11 @@ static void test_parse_expect()
 {
     sloth_value v;
     v.type = SLOTH_TRUE;
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, " "));
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_get_type(&v));
+    EXPECT_EQ_INT(SLOTH_PARSE_EXPECT_VALUE, sloth_parse(&v, " "));
+    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
 
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, ""));
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_get_type(&v));
+    EXPECT_EQ_INT(SLOTH_PARSE_EXPECT_VALUE, sloth_parse(&v, ""));
+    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
 }
 
 //测试空白之后还有字符
@@ -54,8 +54,8 @@ static void test_parse_singular()
 {
     sloth_value v;
     v.type = SLOTH_TRUE;
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "null n"));
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_get_type(&v));
+    EXPECT_EQ_INT(SLOTH_PARSE_ROOT_NOT_SINGULAR, sloth_parse(&v, "null n"));
+    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
 }
 
 //测试含有非法字符
@@ -63,8 +63,8 @@ static void test_parse_invalid()
 {
     sloth_value v;
     v.type = SLOTH_TRUE;
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "asd"));
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_get_type(&v));
+    EXPECT_EQ_INT(SLOTH_PARSE_INVALID_VALUE, sloth_parse(&v, "asd"));
+    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
 }
 
 //测试true
@@ -73,7 +73,7 @@ static void test_parse_true()
     sloth_value v;
     v.type = SLOTH_FALSE;
     EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "true"));
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_get_type(&v));
+    EXPECT_EQ_INT(SLOTH_TRUE, sloth_get_type(&v));
 }
 
 //测试false
@@ -82,7 +82,7 @@ static void test_parse_false()
     sloth_value v;
     v.type = SLOTH_FALSE;
     EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "false"));
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_get_type(&v));
+    EXPECT_EQ_INT(SLOTH_FALSE, sloth_get_type(&v));
 }
 
 static void test_parse()
