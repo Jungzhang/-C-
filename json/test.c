@@ -26,64 +26,67 @@ static int test_pass = 0;
         }\
     }while(0)
 
+#define TEST_PARSE_BASE(v, json, type_sloth)     \
+        do { \
+            v.type = SLOTH_TRUE;   \
+            EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, json));    \
+            EXPECT_EQ_INT(type_sloth, sloth_get_type(&v));     \
+        } while(0)
+
+#define TEST_ERROR_BASE(v, json, test_type) \
+    do {    \
+        v.type = SLOTH_TRUE;    \
+        EXPECT_EQ_INT(test_type, sloth_parse(&v, json));    \
+        EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));  \
+    }while(0)
+
 #define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect) == actual, expect, actual, "%d")
 
 //测试null
 static void test_parse_null()
 {
     sloth_value v;
-    v.type = SLOTH_TRUE;
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "null"));
-    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
+    TEST_PARSE_BASE(v, "null", SLOTH_NULL);
 }
 
 //测试为零个或多个空格
 static void test_parse_expect()
 {
     sloth_value v;
-    v.type = SLOTH_TRUE;
-    EXPECT_EQ_INT(SLOTH_PARSE_EXPECT_VALUE, sloth_parse(&v, " "));
-    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
-
-    EXPECT_EQ_INT(SLOTH_PARSE_EXPECT_VALUE, sloth_parse(&v, ""));
-    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
+    TEST_ERROR_BASE(v, " ", SLOTH_PARSE_EXPECT_VALUE);
+    TEST_ERROR_BASE(v, "", SLOTH_PARSE_EXPECT_VALUE);
 }
 
 //测试空白之后还有字符
 static void test_parse_singular()
 {
     sloth_value v;
-    v.type = SLOTH_TRUE;
-    EXPECT_EQ_INT(SLOTH_PARSE_ROOT_NOT_SINGULAR, sloth_parse(&v, "null n"));
-    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
+    TEST_ERROR_BASE(v, "null n", SLOTH_PARSE_ROOT_NOT_SINGULAR);
 }
 
 //测试含有非法字符
 static void test_parse_invalid()
 {
     sloth_value v;
-    v.type = SLOTH_TRUE;
-    EXPECT_EQ_INT(SLOTH_PARSE_INVALID_VALUE, sloth_parse(&v, "asd"));
-    EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));
+    TEST_ERROR_BASE(v, "asd", SLOTH_PARSE_INVALID_VALUE);
 }
 
 //测试true
 static void test_parse_true()
 {
     sloth_value v;
-    v.type = SLOTH_FALSE;
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "true"));
-    EXPECT_EQ_INT(SLOTH_TRUE, sloth_get_type(&v));
+    TEST_PARSE_BASE(v, "true", SLOTH_TRUE);
 }
 
 //测试false
 static void test_parse_false()
 {
     sloth_value v;
-    v.type = SLOTH_FALSE;
-    EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, "false"));
-    EXPECT_EQ_INT(SLOTH_FALSE, sloth_get_type(&v));
+    TEST_PARSE_BASE(v, "false", SLOTH_FALSE);
 }
+
+//测试整数
+//static void test_parse_
 
 static void test_parse()
 {

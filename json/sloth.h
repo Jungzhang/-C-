@@ -21,6 +21,7 @@ typedef enum {
 
 //JSON对象的数据类型
 typedef struct {
+    double number;
     sloth_type type;
 } sloth_value;
 
@@ -43,5 +44,8 @@ int sloth_parse(sloth_value *root, const char *json);
 
 //获取结果
 sloth_type sloth_get_type(const sloth_value *v);
+
+//获取数字
+double sloth_get_number(const sloth_value *v);
 
 #endif

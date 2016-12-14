@@ -73,6 +73,13 @@ static int sloth_parse_null(sloth_context *c, sloth_value *v)
     return SLOTH_PARSE_OK;
 }
 
+//分析数字
+static int sloth_parse_number(sloth_context *c, sloth_value *v)
+{
+    
+}
+
+//通过不同的首字母调用不同的解析进行解析操作
 static int sloth_parse_value(sloth_context *c, sloth_value *v)
 {
     switch (*c->json) {
@@ -84,6 +91,7 @@ static int sloth_parse_value(sloth_context *c, sloth_value *v)
     }
 }
 
+//解析JSON的对外接口
 int sloth_parse(sloth_value *root, const char *json)
 {
     assert(root != NULL);
@@ -103,9 +111,18 @@ int sloth_parse(sloth_value *root, const char *json)
     return ret;
 }
 
-
+//获取类型
 sloth_type sloth_get_type(const sloth_value *v)
 {
     assert(v != NULL);
     return v->type;
+}
+
+//获取数字
+double sloth_get_number(const sloth_value *v)
+{
+    assert(v != NULL && v->type == SLOTH_NUMBER);
+
+    return v->number;
+
 }
