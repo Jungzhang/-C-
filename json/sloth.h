@@ -34,7 +34,9 @@ enum {
     //如果传入的字符串中包含非法字符
     SLOTH_PARSE_INVALID_VALUE,
     //若一个字符之后,在空白之后还有其他字符
-    SLOTH_PARSE_ROOT_NOT_SINGULAR
+    SLOTH_PARSE_ROOT_NOT_SINGULAR,
+    //数字越界
+    SLOTH_NUMBER_OUT_OF_REANGE
 };
 
 //传入JSON字符串

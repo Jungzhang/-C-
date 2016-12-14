@@ -26,67 +26,130 @@ static int test_pass = 0;
         }\
     }while(0)
 
-#define TEST_PARSE_BASE(v, json, type_sloth)     \
-        do { \
-            v.type = SLOTH_TRUE;   \
-            EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, json));    \
-            EXPECT_EQ_INT(type_sloth, sloth_get_type(&v));     \
-        } while(0)
+#define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect) == actual, expect, actual, "%d")
+#define EXPECT_EQ_DOUBLE(expect, actual) EXPECT_EQ_BASE((expect) == actual, expect, actual, "%.17g")
 
-#define TEST_ERROR_BASE(v, json, test_type) \
+//测试解析的基方法
+#define TEST_PARSE_BASE(json, type_sloth)     \
+    do { \
+        sloth_value v; \
+        v.type = SLOTH_TRUE;   \
+        EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, json));    \
+        EXPECT_EQ_INT(type_sloth, sloth_get_type(&v));     \
+    } while(0)
+
+//测试错误的基方法
+#define TEST_ERROR_BASE(json, test_type) \
     do {    \
+        sloth_value v; \
         v.type = SLOTH_TRUE;    \
         EXPECT_EQ_INT(test_type, sloth_parse(&v, json));    \
         EXPECT_EQ_INT(SLOTH_NULL, sloth_get_type(&v));  \
     }while(0)
 
-#define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect) == actual, expect, actual, "%d")
+//数字测试基方法
+#define TEST_NUMBER_BASE(num, json) \
+    do {    \
+        sloth_value v;  \
+        EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, json));   \
+        EXPECT_EQ_INT(SLOTH_NUMBER, sloth_get_type(&v)); \
+        EXPECT_EQ_DOUBLE(num, sloth_get_number(&v));   \
+    }while(0)
+
 
 //测试null
 static void test_parse_null()
 {
-    sloth_value v;
-    TEST_PARSE_BASE(v, "null", SLOTH_NULL);
+    TEST_PARSE_BASE("null", SLOTH_NULL);
 }
 
 //测试为零个或多个空格
 static void test_parse_expect()
 {
-    sloth_value v;
-    TEST_ERROR_BASE(v, " ", SLOTH_PARSE_EXPECT_VALUE);
-    TEST_ERROR_BASE(v, "", SLOTH_PARSE_EXPECT_VALUE);
+    TEST_ERROR_BASE(" ", SLOTH_PARSE_EXPECT_VALUE);
+    TEST_ERROR_BASE("", SLOTH_PARSE_EXPECT_VALUE);
 }
 
 //测试空白之后还有字符
 static void test_parse_singular()
 {
-    sloth_value v;
-    TEST_ERROR_BASE(v, "null n", SLOTH_PARSE_ROOT_NOT_SINGULAR);
+    TEST_ERROR_BASE("null n", SLOTH_PARSE_ROOT_NOT_SINGULAR);
+    TEST_ERROR_BASE("0x123", SLOTH_PARSE_ROOT_NOT_SINGULAR);
+    TEST_ERROR_BASE("0x0", SLOTH_PARSE_ROOT_NOT_SINGULAR);
+    TEST_ERROR_BASE("012", SLOTH_PARSE_ROOT_NOT_SINGULAR);
 }
 
 //测试含有非法字符
 static void test_parse_invalid()
 {
-    sloth_value v;
-    TEST_ERROR_BASE(v, "asd", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("asd", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("+0", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("+1", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("1.", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("INF", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("inf", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE(".1", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("e1", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("NAN", SLOTH_PARSE_INVALID_VALUE);
+    TEST_ERROR_BASE("nan", SLOTH_PARSE_INVALID_VALUE);
 }
 
 //测试true
 static void test_parse_true()
 {
-    sloth_value v;
-    TEST_PARSE_BASE(v, "true", SLOTH_TRUE);
+    TEST_PARSE_BASE("true", SLOTH_TRUE);
 }
 
 //测试false
 static void test_parse_false()
 {
-    sloth_value v;
-    TEST_PARSE_BASE(v, "false", SLOTH_FALSE);
+    TEST_PARSE_BASE("false", SLOTH_FALSE);
 }
 
-//测试整数
-//static void test_parse_
+//测试数字
+static void test_parse_number()
+{
+    TEST_NUMBER_BASE(0.0, "0");
+    TEST_NUMBER_BASE(0.0, "0.0");
+    TEST_NUMBER_BASE(-1.0, "-1");
+    TEST_NUMBER_BASE(1.0, "1");
+    TEST_NUMBER_BASE(1.5, "1.5");
+    TEST_NUMBER_BASE(-1.5, "-1.5");
+    TEST_NUMBER_BASE(0.012, "0.012");
+    TEST_NUMBER_BASE(-0.012, "-0.012");
+    TEST_NUMBER_BASE(1E9, "1E9");
+    TEST_NUMBER_BASE(-1E9, "-1E9");
+    TEST_NUMBER_BASE(1E+9, "1E+9");
+    TEST_NUMBER_BASE(-1E+9, "-1E+9");
+    TEST_NUMBER_BASE(1E-9, "1E-9");
+    TEST_NUMBER_BASE(-1E-9, "-1E-9");
+    TEST_NUMBER_BASE(1e9, "1e9");
+    TEST_NUMBER_BASE(-1e9, "-1e9");
+    TEST_NUMBER_BASE(1e9, "1e9");
+    TEST_NUMBER_BASE(1e9, "1e9");
+    TEST_NUMBER_BASE(1e9, "1e9");
+    TEST_NUMBER_BASE(1e9, "1e9");
+    TEST_NUMBER_BASE(1e9, "1e9");
+    TEST_NUMBER_BASE(3.1415926, "3.1415926");
+    TEST_NUMBER_BASE(-3.1415926, "-3.1415926");
+    TEST_NUMBER_BASE(0.0, "1e-10000");
+    TEST_NUMBER_BASE(1.0000000000000002, "1.0000000000000002");
+    TEST_NUMBER_BASE( 4.9406564584124654e-324, "4.9406564584124654e-324" );
+    TEST_NUMBER_BASE(-4.9406564584124654e-324, "-4.9406564584124654e-324");
+    TEST_NUMBER_BASE( 2.2250738585072009e-308, "2.2250738585072009e-308" );
+    TEST_NUMBER_BASE(-2.2250738585072009e-308, "-2.2250738585072009e-308");
+    TEST_NUMBER_BASE( 2.2250738585072014e-308, "2.2250738585072014e-308" );
+    TEST_NUMBER_BASE(-2.2250738585072014e-308, "-2.2250738585072014e-308");
+    TEST_NUMBER_BASE( 1.7976931348623157e+308, "1.7976931348623157e+308" );
+    TEST_NUMBER_BASE(-1.7976931348623157e+308, "-1.7976931348623157e+308");
+}
+
+//测试数字越界
+static void test_parse_out_of_reange()
+{
+    TEST_ERROR_BASE("1e400", SLOTH_NUMBER_OUT_OF_REANGE);
+    TEST_ERROR_BASE("-1e400", SLOTH_NUMBER_OUT_OF_REANGE);
+}
 
 static void test_parse()
 {
@@ -96,6 +159,8 @@ static void test_parse()
     test_parse_invalid();
     test_parse_true();
     test_parse_false();
+    test_parse_number();
+    test_parse_out_of_reange();
 }
 
 int main(int argc, char *argv[])
