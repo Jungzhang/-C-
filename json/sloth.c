@@ -10,15 +10,25 @@
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#include <string.h>
 
 #include "sloth.h"
+
+#ifndef SLOTH_INIT_STACK_SIZE
+#define SLOTH_INIT_STACK_SIZE 256
+#endif
 
 #define EXPECT(c, ch) assert(*c->json == (ch))
 #define ISDIGIT(ch) ('0' <= (ch) && (ch) <= '9')
 #define ISDIGIT1TO9(ch) ('1' <= (ch) && (ch) <= '9')
+#define SLOTH_INIT(v) do{(v)->type = SLOTH_NULL;}while(0)
+#define PUTC(c, ch) do{*(char *)sloth_context_push(c, sizeof(char)) = (ch);}while(0)
 
+//简化传参的数据结构
 typedef struct {
     const char *json;
+    char *stack;
+    size_t size, top;
 }sloth_context;
 
 //空白
@@ -30,6 +40,13 @@ static void sloth_parse_whitespace(sloth_context *c)
         ++p;
     }
     c->json = p;
+}
+
+//设置boolean
+void sloth_set_boolean(sloth_value *v, int b)
+{
+    assert(b == SLOTH_TRUE || b == SLOTH_FALSE);
+    v->type = b;
 }
 
 //分析true
@@ -77,6 +94,14 @@ static int sloth_parse_null(sloth_context *c, sloth_value *v)
     return SLOTH_PARSE_OK;
 }
 
+//设置数字
+void slth_set_number(sloth_value *v, double number)
+{
+    assert(v != NULL);
+    v->type = SLOTH_NUMBER;
+    v->u.number = number;
+}
+
 //分析数字
 static int sloth_parse_number(sloth_context *c, sloth_value *v)
 {
@@ -115,18 +140,103 @@ static int sloth_parse_number(sloth_context *c, sloth_value *v)
     }
 
     errno = 0;
-    v->number = strtod(c->json, NULL);
+    v->u.number = strtod(c->json, NULL);
 
-    if (errno == ERANGE && (v->number == HUGE_VAL || v->number == -HUGE_VAL)) {
-        v->number = 0;
+    if (errno == ERANGE && (v->u.number == HUGE_VAL || v->u.number == -HUGE_VAL)) {
+        v->u.number = 0;
         return SLOTH_NUMBER_OUT_OF_REANGE;
     }
 
-    //此处不可用strtod的返回的end指针,因为json中没有0x,但是该函数可正常解析0x系列
+    //此处不可用strtod的返回的end指针
+    //因为json中没有0x,但是该函数可正常解析0x
+    //所以当有0x时就会发生错误
     c->json = p;
     v->type = SLOTH_NUMBER;
 
     return SLOTH_PARSE_OK;
+}
+
+//释放字符串空间
+void sloth_free(sloth_value *root)
+{
+    assert(root != NULL);
+    if (root->type == SLOTH_STRING) {
+        free(root->u.str.s);
+    }
+    //防止双重释放
+    root->type = SLOTH_NULL;
+}
+
+//设置字符串
+void sloth_set_string(sloth_value *root, const char *s, size_t len)
+{
+    assert(root != NULL && (s != NULL || len == 0));
+    root->u.str.s = malloc(len + 1);
+    memcpy(root->u.str.s, s, len);
+    root->u.str.s[len] = '\0';
+    root->u.str.len = len;
+    root->type = SLOTH_STRING;
+}
+
+//暂存栈入栈操作
+static void *sloth_context_push(sloth_context *c, size_t size)
+{
+    void *ret;
+    assert(c != NULL && size > 0);
+    
+    //如果栈顶元素加上要入栈的长度超过当前栈的总大小
+    //则需要对栈进行扩容操作
+    if (c->top + size >= c->size) {
+        //如果是未分配则
+        if (c->size == 0) {
+            c->size = SLOTH_INIT_STACK_SIZE;
+        }
+        while (c->top + size >= size) {
+            c->size += c->size >> 1;
+        }
+        c->stack = (char *)realloc(c->stack, c->size);
+    }
+    
+    ret = c->stack + c->top;
+    c->top += size;
+    
+    return ret;
+}
+
+//暂存栈出栈操作
+static void *sloth_context_pop(sloth_context *c, size_t size)
+{
+    assert(c != NULL && size >= 0);
+    return c->stack + (c->top -= size);
+}
+
+//解析字符串
+static int sloth_parse_string(sloth_context *c, sloth_value *v)
+{
+    size_t head = c->top, len;
+    const char *p;
+    
+    EXPECT(c, '\"');    //判断json串的开头是不是"
+    p = c->json;
+
+    while(1) {
+        char ch = *p++;
+        switch (ch) {
+            case '\"': {
+                len = c->top - head;
+                sloth_set_string(v, (const char *)sloth_context_pop(c, len), len);
+                c->json = p;
+                return SLOTH_PARSE_OK;
+            }
+            case '\0': {
+                c->top = head;
+                return SLOTH_PARSE_MISS_QUOTATION_MARK;
+            }
+            default : {
+                PUTC(c, ch);
+            }
+        }
+    }
 }
 
 //通过不同的首字母调用不同的解析进行解析操作
@@ -150,6 +260,7 @@ int sloth_parse(sloth_value *root, const char *json)
     c.json = json;
     root->type = SLOTH_NULL;
     sloth_parse_whitespace(&c);
+
     //只有解析成功之后才有肯能去检查空格之后还有没有非空格值
     if ((ret = sloth_parse_value(&c, root)) == SLOTH_PARSE_OK) {
         sloth_parse_whitespace(&c);
@@ -161,6 +272,7 @@ int sloth_parse(sloth_value *root, const char *json)
     
     return ret;
 }
+
 
 //获取类型
 sloth_type sloth_get_type(const sloth_value *v)
@@ -174,5 +286,26 @@ double sloth_get_number(const sloth_value *v)
 {
     assert(v != NULL && v->type == SLOTH_NUMBER);
 
-    return v->number;
+    return v->u.number;
+}
+
+//获取字符串
+const char *sloth_get_string(const sloth_value *v)
+{
+    assert(v->type == SLOTH_STRING && v->u.str.s != NULL);
+    return v->u.str.s;
+}
+
+//获取字符串长度
+size_t sloth_get_string_length(const sloth_value *v)
+{
+    assert(v->type == SLOTH_STRING && v->u.str.s != NULL);
+    return v->u.str.len;
+}
+
+//获取boolean
+int sloth_get_boolean(const sloth_value *v)
+{
+    assert(v != NULL && (v->type == SLOTH_TRUE || v->type == SLOTH_FALSE));
+    return v->type;
 }

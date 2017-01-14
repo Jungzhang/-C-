@@ -56,7 +56,6 @@ static int test_pass = 0;
         EXPECT_EQ_DOUBLE(num, sloth_get_number(&v));   \
     }while(0)
 
-
 //测试null
 static void test_parse_null()
 {
@@ -143,6 +142,16 @@ static void test_parse_number()
     TEST_NUMBER_BASE( 1.7976931348623157e+308, "1.7976931348623157e+308" );
     TEST_NUMBER_BASE(-1.7976931348623157e+308, "-1.7976931348623157e+308");
 }
+
+#define TEST_STRING(expect, json) \
+    do { \
+        sloth_value v;  \
+        sloth_init(&v);     \
+        EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, json));\
+        EXPECT_EQ_INT(LEPT_STRING, lept_get_type(&v));\
+        EXPECT_EQ_STRING(expect, lept_get_string(&v), lept_get_string_length(&v));\
+        lept_free(&v);\
+    }
 
 //测试数字越界
 static void test_parse_out_of_reange()
