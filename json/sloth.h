@@ -12,7 +12,7 @@
 #define sloth_set_null(v) sloth_free(v)
 
 //初始化
-#define sloth_init(v) do{v->type = SLOTH_NULL;}while(0)
+#define sloth_init(v) do{(v)->type = SLOTH_NULL;}while(0)
 
 //JSON中的数据类型
 typedef enum {
@@ -51,7 +51,9 @@ enum {
     //
     SLOTH_PARSE_INVALID_STRING_ESCAPE,
     //无效的字符
-    SLOTH_PARSE_INVALID_STRING_CHAR
+    SLOTH_PARSE_INVALID_STRING_CHAR,
+    //解析的数字太大
+    SLOTH_PARSE_NUMBER_TOO_BIG
 };
 
 //传入JSON字符串

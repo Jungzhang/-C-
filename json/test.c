@@ -28,6 +28,8 @@ static int test_pass = 0;
 
 #define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect) == actual, expect, actual, "%d")
 #define EXPECT_EQ_DOUBLE(expect, actual) EXPECT_EQ_BASE((expect) == actual, expect, actual, "%.17g")
+#define EXPECT_EQ_STRING(expect, actual, alength) \
+    EXPECT_EQ_BASE(sizeof(expect) - 1 == alength && memcmp(expect, actual, alength) == 0, expect, actual, "%s")
 
 //测试解析的基方法
 #define TEST_PARSE_BASE(json, type_sloth)     \
@@ -51,6 +53,7 @@ static int test_pass = 0;
 #define TEST_NUMBER_BASE(num, json) \
     do {    \
         sloth_value v;  \
+        sloth_init(&v);     \
         EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, json));   \
         EXPECT_EQ_INT(SLOTH_NUMBER, sloth_get_type(&v)); \
         EXPECT_EQ_DOUBLE(num, sloth_get_number(&v));   \
@@ -143,15 +146,23 @@ static void test_parse_number()
     TEST_NUMBER_BASE(-1.7976931348623157e+308, "-1.7976931348623157e+308");
 }
 
+//测试字符串的基方法
 #define TEST_STRING(expect, json) \
     do { \
         sloth_value v;  \
         sloth_init(&v);     \
-        EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, json));\
-        EXPECT_EQ_INT(LEPT_STRING, lept_get_type(&v));\
-        EXPECT_EQ_STRING(expect, lept_get_string(&v), lept_get_string_length(&v));\
-        lept_free(&v);\
-    }
+        EXPECT_EQ_INT(SLOTH_PARSE_OK, sloth_parse(&v, json));\
+        EXPECT_EQ_INT(SLOTH_STRING, sloth_get_type(&v));\
+        EXPECT_EQ_STRING(expect, sloth_get_string(&v), sloth_get_string_length(&v));\
+        sloth_free(&v);\
+    }while(0)
+
+static void test_parse_string() {
+    TEST_STRING("", "\"\"");
+    TEST_STRING("Hello", "\"Hello\"");
+    TEST_STRING("Hello\nWorld", "\"Hello\\nWorld\"");
+    TEST_STRING("\" \\ / \b \f \n \r \t", "\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t\"");
+}
 
 //测试数字越界
 static void test_parse_out_of_reange()

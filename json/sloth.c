@@ -289,6 +289,14 @@ double sloth_get_number(const sloth_value *v)
     return v->u.number;
 }
 
+//设置数字
+void sloth_set_number(sloth_value *v, double n)
+{
+    assert(v != NULL);
+    v->type = SLOTH_NUMBER;
+    v->u.number = n;
+}
+
 //获取字符串
 const char *sloth_get_string(const sloth_value *v)
 {
