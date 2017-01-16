@@ -45,8 +45,8 @@ static void sloth_parse_whitespace(sloth_context *c)
 //设置boolean
 void sloth_set_boolean(sloth_value *v, int b)
 {
-    assert(b == SLOTH_TRUE || b == SLOTH_FALSE);
-    v->type = b;
+    sloth_free(v);
+    v->type = b ? SLOTH_TRUE : SLOTH_FALSE;
 }
 
 //分析true
@@ -95,9 +95,10 @@ static int sloth_parse_null(sloth_context *c, sloth_value *v)
 }
 
 //设置数字
-void slth_set_number(sloth_value *v, double number)
+void sloth_set_number(sloth_value *v, double number)
 {
     assert(v != NULL);
+    sloth_free(v);
     v->type = SLOTH_NUMBER;
     v->u.number = number;
 }
@@ -171,6 +172,7 @@ void sloth_free(sloth_value *root)
 void sloth_set_string(sloth_value *root, const char *s, size_t len)
 {
     assert(root != NULL && (s != NULL || len == 0));
+    sloth_free(root);
     root->u.str.s = malloc(len + 1);
     memcpy(root->u.str.s, s, len);
     root->u.str.s[len] = '\0';
@@ -191,7 +193,7 @@ static void *sloth_context_push(sloth_context *c, size_t size)
         if (c->size == 0) {
             c->size = SLOTH_INIT_STACK_SIZE;
         }
-        while (c->top + size >= size) {
+        while (c->top + size >= c->size) {
             c->size += c->size >> 1;
         }
         c->stack = (char *)realloc(c->stack, c->size);
@@ -206,18 +208,65 @@ static void *sloth_context_push(sloth_context *c, size_t size)
 //暂存栈出栈操作
 static void *sloth_context_pop(sloth_context *c, size_t size)
 {
-    assert(c != NULL && size >= 0);
+    assert(c != NULL && c->top >= size);
     return c->stack + (c->top -= size);
 }
 
+//返回错误码
+#define STRING_ERROR(c, head, ret) do{(c)->top = head; return ret;}while(0)
+
+//读取4位1６进制数
+static const char *sloth_parse_hex4(const char *p, unsigned *u)
+{
+    int i;
+    *u = 0;
+    for (i = 0; i < 4; ++i) {
+        char ch = *p++;
+        *u <<= 4; //效果相当于 *u *= 16;
+        if ('0' <= ch && ch <= '9') {
+            *u |= ch - '0';  //效果相当于 *u += ch - '0';
+        } else if ('A' <= ch && ch <= 'F') {
+            *u |= ch - ('A' - 10);
+        } else if ('a' <= ch && ch <= 'f') {
+            *u |= ch - ('a' - 10);
+        } else {
+            return NULL;
+        }
+    }
+    
+    return p;
+}
+
+//utf-8编码
+static void sloth_encode_utf8(sloth_context *c, unsigned u) 
+{
+    if (u <= 0x7F) { //码点7位
+        //避免编译器的误判警告(unsigned -> char)
+        PUTC(c, u & 0xFF);  
+    } else if (u <= 0x7FF) { //11位码点
+        PUTC(c, 0xc0 | ((u>>6) & 0xFF)); //字节2占5位,开始是110->0xc0
+        PUTC(c, 0x80 | (u & 0x3F));      //字节1占6位,开始是10->0x80
+    } else if (u <= 0xFFFF) { //16位码点
+        PUTC(c, 0xE0 | ((u >> 12) & 0xFF));
+        PUTC(c, 0x80 | ((u >> 6) & 0x3F));
+        PUTC(c, 0x80 | (u & 0x3F));
+    } else { //21位码点
+        assert(u <= 0x10FFFF);
+        PUTC(c, 0xF0 | ((u >> 18) & 0xFF));
+        PUTC(c, 0x80 | ((u >> 12) & 0x3F));
+        PUTC(c, 0x80 | ((u >> 6) & 0x3F));
+        PUTC(c, 0x80 | (u & 0x3F));
+    }
+}
 //解析字符串
 static int sloth_parse_string(sloth_context *c, sloth_value *v)
 {
     size_t head = c->top, len;
     const char *p;
+    unsigned u, u1;
     
     EXPECT(c, '\"');    //判断json串的开头是不是"
-    p = c->json;
+    p = ++c->json;
 
     while(1) {
         char ch = *p++;
@@ -228,11 +277,52 @@ static int sloth_parse_string(sloth_context *c, sloth_value *v)
                 c->json = p;
                 return SLOTH_PARSE_OK;
             }
+            case '\\': {
+                switch (*p++) {
+                    case '\"': PUTC(c, '\"'); break;
+                    case '\\': PUTC(c, '\\'); break;
+                    case '/': PUTC(c, '/'); break;
+                    case 'b': PUTC(c, '\b'); break;
+                    case 'f': PUTC(c, '\f'); break;
+                    case 'n': PUTC(c, '\n'); break;
+                    case 'r': PUTC(c, '\r'); break;
+                    case 't': PUTC(c, '\t'); break;
+                    case 'u': {
+                        //读取失败
+                        if (!(p = sloth_parse_hex4(p, &u))) {
+                            STRING_ERROR(c, head, SLOTH_PARSE_INVALID_UNICODE_HEX);
+                        }
+                        //代理对
+                        if (u >= 0xD800 && u <= 0xDBFF) {
+                            if (*p++ != '\\') {
+                                STRING_ERROR(c, head, SLOTH_PARSE_INVALID_UNICODE_SURROGATE);
+                            }
+                            if (*p++ != 'u') {
+                                STRING_ERROR(c, head, SLOTH_PARSE_INVALID_UNICODE_SURROGATE);
+                            }
+                            if (!(p = sloth_parse_hex4(p, &u1))) {
+                                STRING_ERROR(c, head, SLOTH_PARSE_INVALID_UNICODE_HEX);
+                            }
+                            if (u1 < 0xDC00 || u1 > 0xDFFF) {
+                                STRING_ERROR(c, head, SLOTH_PARSE_INVALID_UNICODE_SURROGATE);
+                            }
+                            u = (((u - 0xD800) << 10) | (u1 - 0xDC00)) + 0x10000;
+                        }
+                        sloth_encode_utf8(c, u);
+                    }
+                    default : {
+                        STRING_ERROR(c, head, SLOTH_PARSE_INVALID_STRING_ESCAPE);
+                    } 
+                }
+            } break;
             case '\0': {
-                c->top = head;
-                return SLOTH_PARSE_MISS_QUOTATION_MARK;
+                STRING_ERROR(c, head, SLOTH_PARSE_MISS_QUOTATION_MARK);
             }
             default : {
+                //判断输入字符是否有非法字符(不可显示字符)
+                if ((unsigned char)ch < 32) {
+                    STRING_ERROR(c, head, SLOTH_PARSE_INVALID_STRING_CHAR);
+                }
                 PUTC(c, ch);
             }
         }
@@ -246,6 +336,7 @@ static int sloth_parse_value(sloth_context *c, sloth_value *v)
         case 'n' : return sloth_parse_null(c, v);
         case 't' : return sloth_parse_true(c, v);
         case 'f' : return sloth_parse_false(c, v);
+        case '\"': return sloth_parse_string(c, v);
         case '\0' : return SLOTH_PARSE_EXPECT_VALUE;
         default : return sloth_parse_number(c, v);
     }
@@ -258,10 +349,12 @@ int sloth_parse(sloth_value *root, const char *json)
     int ret;
     sloth_context c;
     c.json = json;
-    root->type = SLOTH_NULL;
+    c.stack = NULL;
+    c.size = c.top = 0;
+    sloth_init(root);
     sloth_parse_whitespace(&c);
 
-    //只有解析成功之后才有肯能去检查空格之后还有没有非空格值
+    //只有解析成功之后才有可能去检查空格之后还有没有非空格值
     if ((ret = sloth_parse_value(&c, root)) == SLOTH_PARSE_OK) {
         sloth_parse_whitespace(&c);
         if (*c.json != '\0') {
@@ -269,6 +362,8 @@ int sloth_parse(sloth_value *root, const char *json)
             ret = SLOTH_PARSE_ROOT_NOT_SINGULAR;
         }
     }
+    assert(c.top == 0);
+    free(c.stack);
     
     return ret;
 }
@@ -289,14 +384,6 @@ double sloth_get_number(const sloth_value *v)
     return v->u.number;
 }
 
-//设置数字
-void sloth_set_number(sloth_value *v, double n)
-{
-    assert(v != NULL);
-    v->type = SLOTH_NUMBER;
-    v->u.number = n;
-}
-
 //获取字符串
 const char *sloth_get_string(const sloth_value *v)
 {
@@ -315,5 +402,6 @@ size_t sloth_get_string_length(const sloth_value *v)
 int sloth_get_boolean(const sloth_value *v)
 {
     assert(v != NULL && (v->type == SLOTH_TRUE || v->type == SLOTH_FALSE));
-    return v->type;
+    return v->type == SLOTH_TRUE;
 }
+

@@ -48,12 +48,14 @@ enum {
     SLOTH_NUMBER_OUT_OF_REANGE,
     //缺少引号
     SLOTH_PARSE_MISS_QUOTATION_MARK,
-    //
+    //转义字符出现不合法字符
     SLOTH_PARSE_INVALID_STRING_ESCAPE,
     //无效的字符
     SLOTH_PARSE_INVALID_STRING_CHAR,
-    //解析的数字太大
-    SLOTH_PARSE_NUMBER_TOO_BIG
+    //解析不合法的十六进制数字
+    SLOTH_PARSE_INVALID_UNICODE_HEX,
+    //不正确的代理对
+    SLOTH_PARSE_INVALID_UNICODE_SURROGATE
 };
 
 //传入JSON字符串
