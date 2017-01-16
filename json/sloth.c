@@ -309,6 +309,7 @@ static int sloth_parse_string(sloth_context *c, sloth_value *v)
                             u = (((u - 0xD800) << 10) | (u1 - 0xDC00)) + 0x10000;
                         }
                         sloth_encode_utf8(c, u);
+                        break;
                     }
                     default : {
                         STRING_ERROR(c, head, SLOTH_PARSE_INVALID_STRING_ESCAPE);
